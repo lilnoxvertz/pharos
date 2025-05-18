@@ -3,7 +3,7 @@ const Proxy = require("../utils/proxy.utils")
 
 const refferralCode = "PIeu5IbkQuQfH7zd"
 
-const proxy = await Proxy.load()
+const proxy = Proxy.load()
 
 const rateLimitConfig = {
     maxAttempt: 3
