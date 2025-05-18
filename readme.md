@@ -45,6 +45,6 @@
 
 for referral, go to config.js and change the referralCode with yours
 
-## SUPPORT DEV BUAT BELI GACOAN DAN UDANG KEJU
+## SUPPORT DEV BUAT BELI GACOAN DAN UDANG KEJU https://trakteer.id/noxxx7
 
-https://trakteer.id/noxxx7
+
