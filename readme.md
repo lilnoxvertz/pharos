@@ -47,4 +47,4 @@ for referral, go to config.js and change the referralCode with yours
 
 ## SUPPORT DEV BUAT BELI GACOAN DAN UDANG KEJU
 
-teer.id/noxxu7
+https://teer.id/noxxu7
