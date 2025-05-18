@@ -99,6 +99,7 @@ class Transaction {
         }
 
         console.log(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SENDING TOKEN`)
+        return
     }
 
     static async deposit(contract, value) {
@@ -277,6 +278,7 @@ class Transaction {
         }
 
         console.log(`✅ ${sender.address} FINISHED ${cycle - 1} CYCLE OF SWAPPING`)
+        return
     }
 }
 
