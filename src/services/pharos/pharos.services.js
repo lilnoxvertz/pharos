@@ -40,7 +40,7 @@ class PharosClient {
 
                 if (!response.ok) {
                     console.log(`❗ ${walletAddress} FAILED TO DO CHECK IN. RETRYING`)
-                    await new Promise(resolve => setTimeout(resolve, 10000))
+                    await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }
 
@@ -60,6 +60,9 @@ class PharosClient {
                 })
             }
         }
+        parentPort.postMessage({
+            type: "done",
+        })
     }
 
     static async reportSendTokenTask(walletAddress, token, txhash, agent) {
@@ -82,7 +85,14 @@ class PharosClient {
                     agent
                 })
 
-                const result = await response.json()
+                let result
+                try {
+                    const text = await response.text()
+                    result = text ? JSON.parse(text) : {}
+                } catch (jsonError) {
+                    console.warn(`Warning: Failed to parse JSON from response for ${walletAddress}:`, jsonError)
+                    result = {}
+                }
 
                 const status = result?.data?.verified
 
@@ -90,7 +100,7 @@ class PharosClient {
                     console.log(`[FAILED VERIFYING TASK FOR ${walletAddress}]`)
                     console.log(`📃 TASK ID : 103`)
                     console.log(`📃 TX HASH : ${txhash}`)
-                    await new Promise(resolve => setTimeout(resolve, 5000))
+                    await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }
 
@@ -152,7 +162,7 @@ class PharosClient {
                     }
 
                     console.log(`❗ FAILED GETTING PHRS FAUCET FOR ${walletAddress}. RETRYING`)
-                    await new Promise(resolve => setTimeout(resolve, 10000))
+                    await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }
 
@@ -171,6 +181,9 @@ class PharosClient {
                 })
             }
         }
+        parentPort.postMessage({
+            type: "done",
+        })
     }
 
 
@@ -201,7 +214,7 @@ class PharosClient {
 
                 if (!response.ok) {
                     console.log(`❗ ${walletAddress} FAILED GETTING FAUCET STATUS. RETRYING`)
-                    await new Promise(resolve => setTimeout(resolve, 5000))
+                    await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }
 
@@ -213,10 +226,6 @@ class PharosClient {
                 console.error(error)
             }
         }
-        parentPort.postMessage({
-            type: "failed",
-            data: `❗ ${walletAddress} FAILED GETTING FAUCET STATUS. RETRYING`
-        })
     }
 }
 

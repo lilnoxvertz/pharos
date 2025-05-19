@@ -13,6 +13,10 @@ class Workers {
             })
 
             worker.on("message", (message) => {
+                if (message.type === "done") {
+                    resolve()
+                }
+
                 if (message.type === "success") {
                     const address = message.data.address
                     const token = message.data.token
@@ -54,6 +58,10 @@ class Workers {
             })
 
             worker.on("message", (message) => {
+                if (message.type === "done") {
+                    resolve()
+                }
+
                 if (message.type === "success") {
                     if (message.data.result === 1) {
                         console.log(`✅ ${message.data.address} HAS CHECKED IN ALREADY`)
@@ -89,6 +97,10 @@ class Workers {
             })
 
             worker.on("message", (message) => {
+                if (message.type === "done") {
+                    resolve()
+                }
+
                 if (message.type === "success") {
                     resolve()
                 }
@@ -123,6 +135,9 @@ class Workers {
             })
 
             worker.on("message", async (message) => {
+                if (message.type === "done") {
+                    resolve()
+                }
                 if (message.type === "success") {
                     console.log(`✅ ${message.data.address} SUCCESSFULLY CLAIMED FAUCET`)
                     resolve()
@@ -156,6 +171,9 @@ class Workers {
             })
 
             worker.on("message", (message) => {
+                if (message.type === "done") {
+                    resolve()
+                }
                 if (message.type === "success") {
                     console.log(`\n✅ ${message.data.address} SUCCESSFULLY SWAPPING TOKEN`)
                     console.log(`[+] HASH               : ${message.data.hash}`)

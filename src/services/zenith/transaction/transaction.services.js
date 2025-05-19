@@ -1,11 +1,9 @@
 const { ethers, formatUnits } = require("ethers")
 const { pharos, routerAddress, tokenArr } = require("../../../config/config")
 const { parentPort, workerData } = require("worker_threads")
-const abi = require("../../../config/abi.json")
 const PharosClient = require("../../pharos/pharos.services")
 const { HttpsProxyAgent } = require("https-proxy-agent")
 const Wallet = require("../../../utils/wallet.utils")
-const { resolve } = require("path")
 
 class Transaction {
     static encodeMultiCallData(pair, amount, walletAddress) {
@@ -85,11 +83,12 @@ class Transaction {
                     type: "success"
                 })
 
-                console.log(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle}]`)
-                i++
                 cycle++
+                console.log(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle - 1}]`)
+                i++
 
-                await new Promise(resolve => setTimeout(resolve, 10000))
+
+                await new Promise(resolve => setTimeout(resolve, 20000))
             } catch (error) {
                 parentPort.postMessage({
                     type: "error",
@@ -156,7 +155,7 @@ class Transaction {
         ]
 
         let cycle = 1
-        let maxCycle = 2
+        let maxCycle = 10
 
         while (cycle <= maxCycle) {
             const mode = Math.floor(Math.random() * swapMode.length)
@@ -265,9 +264,9 @@ class Transaction {
                             }
                         })
                 }
-
-                console.log(`[+] ${sender.address} HAS COMPLETED SWAP CYCLE [${cycle}]`)
                 cycle++
+                console.log(`[+] ${sender.address} HAS COMPLETED SWAP CYCLE [${cycle - 1}]`)
+
                 await new Promise(resolve => setTimeout(resolve, 20000))
             } catch (error) {
                 parentPort.postMessage({
