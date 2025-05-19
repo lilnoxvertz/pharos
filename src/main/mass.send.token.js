@@ -10,6 +10,16 @@ async function start() {
         const senderWalletArr = await Wallet.load()
         const proxyArr = await Proxy.load()
 
+        if (senderWallerArr.length === 0) {
+            console.log("no private keys found")
+            process.exit(1)
+        }
+
+        if (proxyArr.length === 0) {
+            console.log("no proxy found. using current ip")
+            maxWorker = 2
+        }
+
         const sendTask = []
         const authTask = []
         const authDataArr = []
