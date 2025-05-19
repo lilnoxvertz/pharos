@@ -15,32 +15,35 @@
 
 1. go to src>main>generate.wallet.js and change the amount, then run this command
    ```bash
-       npm run generate
+   npm run generate
    ```
 
 - CHECK-IN
 
   ```bash
-      npm run cekin
+  npm run cekin
   ```
 
 - CLAIMING FAUCET
 
   ```bash
-      npm run faucet
+  npm run faucet
   ```
 
 - SENDING TOKEN TO WALLET
 
   ```bash
-      npm run send
+  npm run send
   ```
 
 - SWAPPING
   ```bash
-      npm run swap
+  npm run swap
   ```
-
+- SHOWING POINTS
+  ```bash
+  npm run point
+  ```
 ## NOTE
 
 for referral, go to config.js and change the referralCode with yours
