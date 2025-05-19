@@ -10,7 +10,7 @@ async function start() {
         const senderWalletArr = await Wallet.load()
         const proxyArr = await Proxy.load()
 
-        if (senderWallerArr.length === 0) {
+        if (senderWalletArr.length === 0) {
             console.log("no private keys found")
             process.exit(1)
         }
