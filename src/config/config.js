@@ -12,12 +12,6 @@ const pharos = {
     contractAddress: "0x76aaada469d23216be5f7c596fa25f282ff9b364"
 }
 
-const maxWorker = async () => {
-    const proxy = await Proxy.load()
-    return proxy.length > 0 ? 5 : 2
-}
-
-
 const routerAddress = "0x1a4de519154ae51200b0ad7c90f7fac75547888a"
 
 const tokenArr = {
@@ -46,4 +40,4 @@ const authHeader = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0'
 }
 
-module.exports = { refferralCode, rateLimitConfig, pharos, authHeader, routerAddress, tokenArr, maxWorker }
+module.exports = { refferralCode, rateLimitConfig, pharos, authHeader, routerAddress, tokenArr }
