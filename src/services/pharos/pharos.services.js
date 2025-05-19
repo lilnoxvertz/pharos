@@ -227,6 +227,49 @@ class PharosClient {
             }
         }
     }
+
+    static async getPoint() {
+        const { walletAddress, token, proxy } = workerData
+        const agent = proxy ? new HttpsProxyAgent(proxy) : undefined
+        const url = `https://api.pharosnetwork.xyz/user/profile?address=${walletAddress}`
+
+        const header = {
+            ...authHeader,
+            "Authorization": token
+        }
+
+        try {
+            const response = await fetch(url, {
+                method: "GET",
+                headers: header,
+                agent
+            })
+
+            if (!response.ok) {
+                parentPort.postMessage({
+                    type: "failed",
+                    data: `❗ ${walletAddress} FAILED GETTING POINTS`
+                })
+            }
+            const result = await response.json()
+            const totalPoints = result?.data?.user_info.TotalPoints
+            const taskPoints = result?.data?.user_info.TaskPoints
+
+            parentPort.postMessage({
+                type: "done",
+                data: {
+                    address: walletAddress,
+                    totalPoints: totalPoints,
+                    taskPoints: taskPoints
+                }
+            })
+        } catch (error) {
+            parentPort.postMessage({
+                type: "error",
+                data: error
+            })
+        }
+    }
 }
 
 module.exports = PharosClient

@@ -79,26 +79,24 @@ class Transaction {
                     })
                 }
 
+                i++
                 parentPort.postMessage({
                     type: "success"
                 })
 
-                cycle++
-                console.log(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle - 1}]`)
-                i++
-
-
-                await new Promise(resolve => setTimeout(resolve, 20000))
+                console.log(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle}]`)
+                await new Promise(resolve => setTimeout(resolve, 50000))
             } catch (error) {
                 parentPort.postMessage({
                     type: "error",
                     data: error
                 })
             }
+
+            cycle++
         }
 
-        console.log(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SENDING TOKEN`)
-        return
+        console.log(`✅ ${sender.address} FINISHED ${cycle - 1} CYCLE OF SENDING TOKEN`)
     }
 
     static async deposit(contract, value) {
@@ -264,16 +262,16 @@ class Transaction {
                             }
                         })
                 }
-                cycle++
                 console.log(`[+] ${sender.address} HAS COMPLETED SWAP CYCLE [${cycle - 1}]`)
 
-                await new Promise(resolve => setTimeout(resolve, 20000))
+                await new Promise(resolve => setTimeout(resolve, 50000))
             } catch (error) {
                 parentPort.postMessage({
                     type: "error",
                     data: error
                 })
             }
+            cycle++
         }
 
         console.log(`✅ ${sender.address} FINISHED ${cycle - 1} CYCLE OF SWAPPING`)

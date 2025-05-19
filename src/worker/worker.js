@@ -1,4 +1,4 @@
-const { Worker } = require("worker_threads")
+const { Worker, parentPort } = require("worker_threads")
 const path = require("path")
 
 class Workers {
@@ -212,6 +212,43 @@ class Workers {
             worker.on("message", (message) => {
                 if (message.type === "success") {
                     console.log(message.data)
+                    resolve()
+                }
+
+                if (message.type === "failed") {
+                    console.log(message.data)
+                    resolve()
+                }
+
+                if (message.type === "error") {
+                    reject(new Error(message.data))
+                }
+            })
+
+            worker.on("error", reject)
+            worker.on("exit", (code) => {
+                if (code !== 0) {
+                    console.log("WORKER STOPPED")
+                }
+            })
+        })
+    }
+
+    static async pointsWorker(walletAddress, token, proxy) {
+        return new Promise((resolve, reject) => {
+            const worker = new Worker(path.resolve(__dirname, "./task/point.js"), {
+                workerData: {
+                    walletAddress: walletAddress,
+                    token: token,
+                    proxy: proxy
+                }
+            })
+
+            worker.on("message", (message) => {
+                if (message.type === "done") {
+                    console.log(`[${message.data.address} POINTS]`)
+                    console.log(`🪙 TOTAL POINTS: ${message.data.totalPoints}`)
+                    console.log(`🪙 TASK POINT  : ${message.data.taskPoints}\n`)
                     resolve()
                 }
 
