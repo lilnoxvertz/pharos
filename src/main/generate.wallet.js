@@ -4,4 +4,4 @@ async function generate(amount) {
     await Wallet.generate(amount)
 }
 
-generate(7000)
+generate(10) // change this 
