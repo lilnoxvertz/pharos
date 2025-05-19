@@ -1,5 +1,4 @@
 const { HttpsProxyAgent } = require("https-proxy-agent")
-const { parentPort, workerData } = require("worker_threads")
 const { tokenArr } = require("../../config/config")
 
 const url = "https://testnet-router.zenithswap.xyz/api/v1/faucet"

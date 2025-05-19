@@ -99,6 +99,7 @@ class Transaction {
         }
 
         console.log(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SENDING TOKEN`)
+        return
     }
 
     static async deposit(contract, value) {
@@ -155,7 +156,7 @@ class Transaction {
         ]
 
         let cycle = 1
-        let maxCycle = 10
+        let maxCycle = 2
 
         while (cycle <= maxCycle) {
             const mode = Math.floor(Math.random() * swapMode.length)
@@ -277,6 +278,7 @@ class Transaction {
         }
 
         console.log(`✅ ${sender.address} FINISHED ${cycle - 1} CYCLE OF SWAPPING`)
+        return
     }
 }
 
