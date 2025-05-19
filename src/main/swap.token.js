@@ -1,8 +1,8 @@
-const { maxWorker } = require("../config/config")
 const Wallet = require("../utils/wallet.utils")
 const Workers = require("../worker/worker")
 
 async function start() {
+    let maxWorker = 5
     try {
         console.clear()
         const walletArr = await Wallet.load()
