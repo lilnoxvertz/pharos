@@ -1,6 +1,6 @@
 const Wallet = require("../utils/wallet.utils")
 const Proxy = require("../utils/proxy.utils")
-const { refferralCode, maxWorker } = require("../config/config")
+const { refferralCode } = require("../config/config")
 const Workers = require("../worker/worker")
 
 async function start() {
