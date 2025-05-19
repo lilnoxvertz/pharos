@@ -1,9 +1,10 @@
 const Proxy = require("../utils/proxy.utils")
 const Wallet = require("../utils/wallet.utils")
-const { refferralCode, maxWorker } = require("../config/config")
+const { refferralCode } = require("../config/config")
 const Workers = require("../worker/worker")
 
 async function start() {
+    let maxWorker = 5
     try {
         console.clear()
         const walletArr = await Wallet.load()
@@ -19,6 +20,7 @@ async function start() {
 
         if (proxyArr.length === 0) {
             console.log("❗no proxy found, using current ip")
+            maxWorker = 2
         }
 
         const authTask = []
