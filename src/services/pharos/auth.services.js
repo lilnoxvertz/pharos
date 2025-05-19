@@ -57,7 +57,7 @@ class Auth {
 
                 if (!token) {
                     console.log(`❗ ${walletAddress} FAILED RETRIEVING TOKEN! RETRYING`)
-                    await new Promise(resolve => setTimeout(resolve, 5000))
+                    await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }
 

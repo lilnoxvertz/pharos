@@ -1,9 +1,6 @@
 const { ethers } = require("ethers")
-const Proxy = require("../utils/proxy.utils")
 
 const refferralCode = "PIeu5IbkQuQfH7zd"
-
-
 
 const rateLimitConfig = {
     maxAttempt: 3

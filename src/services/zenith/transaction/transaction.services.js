@@ -83,11 +83,12 @@ class Transaction {
                     type: "success"
                 })
 
-                console.log(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle}]`)
-                i++
                 cycle++
+                console.log(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle - 1}]`)
+                i++
 
-                await new Promise(resolve => setTimeout(resolve, 10000))
+
+                await new Promise(resolve => setTimeout(resolve, 20000))
             } catch (error) {
                 parentPort.postMessage({
                     type: "error",
@@ -263,9 +264,9 @@ class Transaction {
                             }
                         })
                 }
-
-                console.log(`[+] ${sender.address} HAS COMPLETED SWAP CYCLE [${cycle}]`)
                 cycle++
+                console.log(`[+] ${sender.address} HAS COMPLETED SWAP CYCLE [${cycle - 1}]`)
+
                 await new Promise(resolve => setTimeout(resolve, 20000))
             } catch (error) {
                 parentPort.postMessage({
