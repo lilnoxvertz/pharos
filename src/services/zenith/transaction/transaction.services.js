@@ -156,7 +156,7 @@ class Transaction {
         ]
 
         let cycle = 1
-        let maxCycle = 2
+        let maxCycle = 10
 
         while (cycle <= maxCycle) {
             const mode = Math.floor(Math.random() * swapMode.length)
