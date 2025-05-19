@@ -2,6 +2,7 @@ const Proxy = require("../utils/proxy.utils");
 const Wallet = require("../utils/wallet.utils");
 const Workers = require("../worker/worker");
 const { refferralCode } = require("../config/config");
+const { ethers } = require("ethers");
 
 async function start() {
     let maxWorker = 5
