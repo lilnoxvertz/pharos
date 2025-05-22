@@ -85,9 +85,6 @@ class Transaction {
                 parentPort.postMessage({
                     type: "success"
                 })
-
-                console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle}]`)}`)
-                await new Promise(resolve => setTimeout(resolve, 50000))
             } catch (error) {
                 parentPort.postMessage({
                     type: "error",
@@ -96,6 +93,8 @@ class Transaction {
             }
 
             cycle++
+            console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle}]`)}`)
+            await new Promise(resolve => setTimeout(resolve, 50000))
         }
 
         console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle - 1} CYCLE OF SENDING TOKEN`)}`)
@@ -155,10 +154,10 @@ class Transaction {
             tokenArr.mai
         ]
 
-        let cycle = 1
+        let cycle = 0
         let maxCycle = 10
 
-        while (cycle <= maxCycle) {
+        while (cycle < maxCycle) {
             const mode = Math.floor(Math.random() * swapMode.length)
 
             try {
@@ -265,9 +264,6 @@ class Transaction {
                             }
                         })
                 }
-                console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SWAP CYCLE [${cycle - 1}]`)}`)
-
-                await new Promise(resolve => setTimeout(resolve, 50000))
             } catch (error) {
                 parentPort.postMessage({
                     type: "error",
@@ -275,9 +271,11 @@ class Transaction {
                 })
             }
             cycle++
+            console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SWAP CYCLE [${cycle}]`)}`)
+            await new Promise(resolve => setTimeout(resolve, 50000))
         }
 
-        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle - 1} CYCLE OF SWAPPING`)}`)
+        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SWAPPING`)}`)
         return
     }
 }
