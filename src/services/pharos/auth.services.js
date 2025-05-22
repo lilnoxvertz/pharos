@@ -2,6 +2,7 @@ const { HttpsProxyAgent } = require("https-proxy-agent")
 const { rateLimitConfig } = require("../../config/config")
 const { workerData, parentPort } = require("worker_threads")
 const { ethers } = require("ethers")
+const chalk = require("chalk")
 
 class Auth {
     static async login() {
@@ -56,7 +57,7 @@ class Auth {
                 const token = result?.data?.jwt
 
                 if (!token) {
-                    console.log(`❗ ${walletAddress} FAILED RETRIEVING TOKEN! RETRYING`)
+                    console.log(chalk.red(`${walletAddress} FAILED RETRIEVING TOKEN! RETRYING`))
                     await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }

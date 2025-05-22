@@ -4,14 +4,16 @@ const { parentPort, workerData } = require("worker_threads")
 const PharosClient = require("../../pharos/pharos.services")
 const { HttpsProxyAgent } = require("https-proxy-agent")
 const Wallet = require("../../../utils/wallet.utils")
+const chalk = require("chalk")
+const { timestamp } = require("../../../utils/timestamp")
 
 class Transaction {
     static encodeMultiCallData(pair, amount, walletAddress) {
         const data = ethers.AbiCoder.defaultAbiCoder().encode(
             ['address', 'address', 'uint256', 'address', 'uint256', 'uint256', 'uint256'],
             [
-                tokenArr.usdt,
-                tokenArr.PHRS,
+                pair.to,
+                pair.from,
                 500,
                 walletAddress,
                 amount,
@@ -53,7 +55,7 @@ class Transaction {
 
         while (cycle <= maxCycle) {
             try {
-                console.log(`${sender.address} sending 0.001 PHRS to ${recipients[i % recipients.length]}`)
+                console.log(`${timestamp()} ${chalk.yellowBright(`${sender.address} sending 0.00001 PHRS to ${recipients[i % recipients.length]}`)}`)
                 const tx = await sender.sendTransaction({
                     to: recipients[i % recipients.length],
                     value: amount
@@ -64,11 +66,11 @@ class Transaction {
                 const txStatus = await this.check(tx.hash)
 
                 if (txStatus.status !== 1) {
-                    console.log(`❗ ${sender.address} FAILED SENDING TOKEN!`)
+                    console.log(`${timestamp()} ${chalk.redBright(`❗ ${sender.address} FAILED SENDING TOKEN!`)}`)
                     return
                 }
 
-                console.log(`✅ ${sender.address} SUCCESSFULLY SENDING TOKEN TO ${recipients[i % recipients.length]}`)
+                console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} SUCCESSFULLY SENDING TOKEN TO ${recipients[i % recipients.length]}`)}`)
 
                 const report = await PharosClient.reportSendTokenTask(sender.address, token, tx.hash, agent)
 
@@ -84,7 +86,7 @@ class Transaction {
                     type: "success"
                 })
 
-                console.log(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle}]`)
+                console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle}]`)}`)
                 await new Promise(resolve => setTimeout(resolve, 50000))
             } catch (error) {
                 parentPort.postMessage({
@@ -96,7 +98,7 @@ class Transaction {
             cycle++
         }
 
-        console.log(`✅ ${sender.address} FINISHED ${cycle - 1} CYCLE OF SENDING TOKEN`)
+        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle - 1} CYCLE OF SENDING TOKEN`)}`)
     }
 
     static async deposit(contract, value) {
@@ -149,7 +151,8 @@ class Transaction {
 
         const tokens = [
             tokenArr.usdc,
-            tokenArr.usdt
+            tokenArr.usdt,
+            tokenArr.mai
         ]
 
         let cycle = 1
@@ -164,7 +167,7 @@ class Transaction {
                         let nonce = await pharos.rpc.getTransactionCount(sender.address, "pending")
                         const router = new ethers.Contract(routerAddress, routerAbi, sender)
 
-                        const amount = ethers.parseUnits("0.001", 18)
+                        const amount = ethers.parseUnits("0.00001", 18)
                         const randomTokenIndex = Math.floor(Math.random() * tokens.length)
                         const tokenOut = tokens[randomTokenIndex]
 
@@ -232,7 +235,7 @@ class Transaction {
                     case 1:
                         const pharosContract = new ethers.Contract(pharos.contractAddress, erc20Abi, sender)
                         const pharosBalance = await pharosContract.balanceOf(sender.address)
-                        const amountToDeposit = ethers.parseUnits("0.001", 18)
+                        const amountToDeposit = ethers.parseUnits("0.00001", 18)
 
                         if (pharosBalance < amountToDeposit) {
                             parentPort.postMessage({
@@ -262,7 +265,7 @@ class Transaction {
                             }
                         })
                 }
-                console.log(`[+] ${sender.address} HAS COMPLETED SWAP CYCLE [${cycle - 1}]`)
+                console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SWAP CYCLE [${cycle - 1}]`)}`)
 
                 await new Promise(resolve => setTimeout(resolve, 50000))
             } catch (error) {
@@ -274,7 +277,7 @@ class Transaction {
             cycle++
         }
 
-        console.log(`✅ ${sender.address} FINISHED ${cycle - 1} CYCLE OF SWAPPING`)
+        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle - 1} CYCLE OF SWAPPING`)}`)
         return
     }
 }

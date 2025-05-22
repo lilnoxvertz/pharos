@@ -1,5 +1,7 @@
-const { Worker, parentPort } = require("worker_threads")
+const { Worker } = require("worker_threads")
 const path = require("path")
+const { timestamp } = require("../utils/timestamp")
+const chalk = require("chalk")
 
 class Workers {
     static async authWorker(privateKey, reffCode, proxy) {
@@ -21,7 +23,7 @@ class Workers {
                     const address = message.data.address
                     const token = message.data.token
 
-                    console.log(`✅ ${address} SUCCESSFULLY RETRIEVED A TOKEN`)
+                    console.log(`${timestamp()} ${chalk.greenBright(`✅ ${address} SUCCESSFULLY RETRIEVED A TOKEN`)}`)
                     resolve({
                         address: address,
                         token: token
@@ -29,7 +31,7 @@ class Workers {
                 }
 
                 if (message.type === "failed") {
-                    console.log(message.data)
+                    console.log(`${timestamp()} ${message.data}`)
                     resolve()
                 }
 
@@ -64,12 +66,16 @@ class Workers {
 
                 if (message.type === "success") {
                     if (message.data.result === 1) {
-                        console.log(`✅ ${message.data.address} HAS CHECKED IN ALREADY`)
+                        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${message.data.address} HAS CHECKED IN ALREADY`)}`)
                         resolve()
                     } else {
-                        console.log(`✅ ${message.data.address} SUCCESSFULLY CHECKING IN`)
+                        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${message.data.address} SUCCESSFULLY CHECKING IN`)}`)
                         resolve()
                     }
+                }
+
+                if (message.type === "failed") {
+                    console.log(chalk.redBright(message.data))
                 }
 
                 if (message.type === "error") {
@@ -106,7 +112,7 @@ class Workers {
                 }
 
                 if (message.type === "failed") {
-                    console.log(message.data)
+                    console.log(`${timestamp()} ${chalk.redBright(message.data)}`)
                     resolve()
                 }
 
@@ -139,12 +145,12 @@ class Workers {
                     resolve()
                 }
                 if (message.type === "success") {
-                    console.log(`✅ ${message.data.address} SUCCESSFULLY CLAIMED FAUCET`)
+                    console.log(`${timestamp()} ${`✅ ${message.data.address} SUCCESSFULLY CLAIMED FAUCET`}`)
                     resolve()
                 }
 
                 if (message.type === "failed") {
-                    console.log(message.data)
+                    console.log(`${timestamp()} ${message.data}`)
                     resolve()
                 }
 
@@ -175,14 +181,14 @@ class Workers {
                     resolve()
                 }
                 if (message.type === "success") {
-                    console.log(`\n✅ ${message.data.address} SUCCESSFULLY SWAPPING TOKEN`)
+                    console.log(`\n${timestamp()} ${chalk.greenBright(`✅ ${message.data.address} SUCCESSFULLY SWAPPING TOKEN`)}`)
                     console.log(`[+] HASH               : ${message.data.hash}`)
                     console.log(`[+] CONFIRMED ON BLOCK : ${message.data.block}`)
                     resolve()
                 }
 
                 if (message.type === "failed") {
-                    console.log(`\n${message.data}`)
+                    console.log(`\n${chalk.redBright(message.data)}`)
                     resolve()
                 }
 
@@ -247,13 +253,13 @@ class Workers {
             worker.on("message", (message) => {
                 if (message.type === "done") {
                     console.log(`[${message.data.address} POINTS]`)
-                    console.log(`🪙 TOTAL POINTS: ${message.data.totalPoints}`)
-                    console.log(`🪙 TASK POINT  : ${message.data.taskPoints}\n`)
+                    console.log(chalk.yellow(`🪙 TOTAL POINTS : ${message.data.totalPoints}`))
+                    console.log(chalk.yellow(`🪙 TASK POINT   : ${message.data.taskPoints}\n`))
                     resolve()
                 }
 
                 if (message.type === "failed") {
-                    console.log(message.data)
+                    console.log(chalk.redBright(message.data))
                     resolve()
                 }
 

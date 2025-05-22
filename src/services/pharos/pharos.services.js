@@ -2,6 +2,8 @@ const { HttpsProxyAgent } = require("https-proxy-agent")
 const { authHeader, rateLimitConfig } = require("../../config/config")
 const { parentPort, workerData } = require("worker_threads")
 const ZenithClient = require("../zenith/zenith.services")
+const chalk = require("chalk")
+const { timestamp } = require("../../utils/timestamp")
 
 class PharosClient {
     static async checkIn() {
@@ -39,7 +41,7 @@ class PharosClient {
                 const result = await response.json()
 
                 if (!response.ok) {
-                    console.log(`❗ ${walletAddress} FAILED TO DO CHECK IN. RETRYING`)
+                    console.log(chalk.redBright(`❗ ${walletAddress} FAILED TO DO CHECK IN. RETRYING`))
                     await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }
@@ -90,28 +92,26 @@ class PharosClient {
                     const text = await response.text()
                     result = text ? JSON.parse(text) : {}
                 } catch (jsonError) {
-                    console.warn(`Warning: Failed to parse JSON from response for ${walletAddress}:`, jsonError)
+                    console.log(chalk.redBright(`Warning: Failed to parse JSON from response for ${walletAddress}:`, jsonError))
                     result = {}
                 }
 
                 const status = result?.data?.verified
 
                 if (!status) {
-                    console.log(`[FAILED VERIFYING TASK FOR ${walletAddress}]`)
-                    console.log(`📃 TASK ID : 103`)
-                    console.log(`📃 TX HASH : ${txhash}`)
+                    console.log(`${timestamp()} ${chalk.redBright(`[FAILED VERIFYING TASK FOR ${walletAddress}]`)}`)
+                    console.log(`${timestamp()} ${chalk.redBright(`📃 TX HASH : ${txhash}`)}`)
                     await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }
 
-                console.log(`✅ SUCCESSFULLY REPORTING TASK FOR ${walletAddress}`)
+                console.log(`${timestamp()} ${chalk.greenBright(`✅ SUCCESSFULLY REPORTING TASK FOR ${walletAddress}`)}`)
 
                 return {
-                    status: status
+                    status: status ?? false
                 }
             } catch (error) {
-                console.log(`\n❗ ERROR VERIFYING TASK`)
-                console.error(error)
+                console.log(`\n${timestamp()} ${chalk.redBright(`❗ ERROR VERIFYING TASK`)}`)
             }
         }
     }
@@ -147,7 +147,7 @@ class PharosClient {
                     const text = await response.text()
                     result = text ? JSON.parse(text) : {}
                 } catch (jsonError) {
-                    console.warn(`Warning: Failed to parse JSON from response for ${walletAddress}:`, jsonError)
+                    console.warn(chalk.redBright(`Warning: Failed to parse JSON from response for ${walletAddress}:`, jsonError))
                     result = {}
                 }
 
