@@ -272,7 +272,7 @@ class Transaction {
             }
             cycle++
             console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SWAP CYCLE [${cycle}]`)}`)
-            await new Promise(resolve => setTimeout(resolve, 50000))
+            await new Promise(resolve => setTimeout(resolve, 20000))
         }
 
         console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SWAPPING`)}`)
@@ -339,14 +339,14 @@ class Transaction {
         ]
 
         console.log(timestamp(), chalk.yellowBright(`  ${signer.address} IS ADDING LIQUIDITY..`))
+        const liqContract = new ethers.Contract(zenith.liqContract, abi, signer)
 
         let cycle = 0
-        const maxCycle = 10
+        const maxCycle = 3
 
         while (cycle < maxCycle) {
+            cycle++
             try {
-                const liqContract = new ethers.Contract(zenith.liqContract, abi, signer)
-
                 const randomPairIndex = Math.floor(Math.random() * pair.length)
                 const randomPair = pair[randomPairIndex]
                 const amount = "0.0001"
@@ -395,6 +395,8 @@ class Transaction {
                     })
                 }
 
+                console.log("sucea")
+
                 parentPort.postMessage({
                     type: "success",
                     data: {
@@ -402,7 +404,9 @@ class Transaction {
                         hash: receipt.hash
                     }
                 })
+
             } catch (error) {
+                console.log(timestamp(), chalk.redBright(`❗ ${signer.address} TRANSACTION REVERTED`))
                 parentPort.postMessage({
                     type: "error",
                     data: chalk.redBright(error)
@@ -410,7 +414,7 @@ class Transaction {
             }
 
             console.log(`${timestamp()} ${chalk.greenBright(`[+] ${signer.address} HAS COMPLETED LIQ CYCLE [${cycle}]`)}`)
-            await new Promise(resolve => setTimeout(resolve, 50000))
+            await new Promise(resolve => setTimeout(resolve, 10000))
         }
 
         console.log(`${timestamp()} ${chalk.greenBright(`✅ ${signer.address} FINISHED ${cycle} CYCLE OF ADDING LIQ`)} `)

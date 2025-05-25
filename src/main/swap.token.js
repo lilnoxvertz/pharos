@@ -1,3 +1,5 @@
+const chalk = require("chalk")
+const { timestamp } = require("../utils/timestamp")
 const Wallet = require("../utils/wallet.utils")
 const Workers = require("../worker/worker")
 
@@ -21,11 +23,11 @@ async function start() {
 
         console.log("\nSTARTING SWAP WORKERS")
         await Workers.startLimitedTask(swapTask, maxWorker)
-
-        console.log("DONE")
     } catch (error) {
         console.error(error)
     }
+
+    console.log(timestamp(), chalk.greenBright("  DONE"))
 }
 
 start()
