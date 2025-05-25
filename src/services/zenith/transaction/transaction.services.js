@@ -342,7 +342,7 @@ class Transaction {
         const liqContract = new ethers.Contract(zenith.liqContract, abi, signer)
 
         let cycle = 0
-        const maxCycle = 3
+        const maxCycle = 10
 
         while (cycle < maxCycle) {
             cycle++
