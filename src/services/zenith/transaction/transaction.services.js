@@ -50,10 +50,10 @@ class Transaction {
         const amount = ethers.parseEther("0.00001")
 
         let i = 0
-        let cycle = 1
+        let cycle = 0
         let maxCycle = 10
 
-        while (cycle <= maxCycle) {
+        while (cycle < maxCycle) {
             try {
                 console.log(`${timestamp()} ${chalk.yellowBright(`${sender.address} sending 0.00001 PHRS to ${recipients[i % recipients.length]}`)}`)
                 const tx = await sender.sendTransaction({
