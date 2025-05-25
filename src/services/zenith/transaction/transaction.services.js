@@ -395,8 +395,6 @@ class Transaction {
                     })
                 }
 
-                console.log("sucea")
-
                 parentPort.postMessage({
                     type: "success",
                     data: {
