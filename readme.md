@@ -40,6 +40,10 @@
   ```bash
   npm run swap
   ```
+- ADDING LIQUIDITY
+  ```bash
+  npm run lig
+  ```
 - SHOWING POINTS
   ```bash
   npm run point
