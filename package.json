@@ -12,6 +12,7 @@
     "send": "node ./src/main/mass.send.token.js",
     "faucet": "node ./src/main/get.faucet.js",
     "swap": "node ./src/main/swap.token.js",
+    "liq": "node ./src/main/add.liquidity.js",
     "point": "node ./src/main/get.points.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

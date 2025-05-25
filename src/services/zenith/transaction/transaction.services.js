@@ -1,11 +1,12 @@
 const { ethers, formatUnits } = require("ethers")
-const { pharos, routerAddress, tokenArr } = require("../../../config/config")
+const { pharos, routerAddress, tokenArr, zenith } = require("../../../config/config")
 const { parentPort, workerData } = require("worker_threads")
 const PharosClient = require("../../pharos/pharos.services")
 const { HttpsProxyAgent } = require("https-proxy-agent")
 const Wallet = require("../../../utils/wallet.utils")
 const chalk = require("chalk")
 const { timestamp } = require("../../../utils/timestamp")
+const Token = require("./token")
 
 class Transaction {
     static encodeMultiCallData(pair, amount, walletAddress) {
@@ -94,10 +95,10 @@ class Transaction {
 
             cycle++
             console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle}]`)}`)
-            await new Promise(resolve => setTimeout(resolve, 50000))
+            await new Promise(resolve => setTimeout(resolve, 25000))
         }
 
-        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle - 1} CYCLE OF SENDING TOKEN`)}`)
+        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SENDING TOKEN`)}`)
     }
 
     static async deposit(contract, value) {
@@ -259,8 +260,7 @@ class Transaction {
                             type: "success",
                             data: {
                                 address: sender.address,
-                                hash: depositReceipt.hash,
-                                block: depositReceipt.block
+                                hash: depositReceipt.hash
                             }
                         })
                 }
@@ -276,7 +276,147 @@ class Transaction {
         }
 
         console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SWAPPING`)}`)
-        return
+        parentPort.postMessage({
+            type: "done"
+        })
+    }
+
+    static async addLiquidity() {
+        const { wallet } = workerData
+
+        const signer = new ethers.Wallet(wallet, pharos.rpc)
+        const abi = [
+            {
+                inputs: [
+                    {
+                        components: [
+                            { internalType: 'address', name: 'token0', type: 'address' },
+                            { internalType: 'address', name: 'token1', type: 'address' },
+                            { internalType: 'uint24', name: 'fee', type: 'uint24' },
+                            { internalType: 'int24', name: 'tickLower', type: 'int24' },
+                            { internalType: 'int24', name: 'tickUpper', type: 'int24' },
+                            { internalType: 'uint256', name: 'amount0Desired', type: 'uint256' },
+                            { internalType: 'uint256', name: 'amount1Desired', type: 'uint256' },
+                            { internalType: 'uint256', name: 'amount0Min', type: 'uint256' },
+                            { internalType: 'uint256', name: 'amount1Min', type: 'uint256' },
+                            { internalType: 'address', name: 'recipient', type: 'address' },
+                            { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+                        ],
+                        internalType: 'struct INonfungiblePositionManager.MintParams',
+                        name: 'params',
+                        type: 'tuple',
+                    },
+                ],
+                name: 'mint',
+                outputs: [
+                    { internalType: 'uint256', name: 'tokenId', type: 'uint256' },
+                    { internalType: 'uint128', name: 'liquidity', type: 'uint128' },
+                    { internalType: 'uint256', name: 'amount0', type: 'uint256' },
+                    { internalType: 'uint256', name: 'amount1', type: 'uint256' },
+                ],
+                stateMutability: 'payable',
+                type: 'function'
+            }
+        ]
+
+        const pair = [
+            {
+                from: tokenArr.PHRS,
+                to: tokenArr.usdc
+            },
+            {
+                from: tokenArr.usdc,
+                to: tokenArr.PHRS
+            },
+            {
+                from: tokenArr.PHRS,
+                to: tokenArr.usdt
+            },
+            {
+                from: tokenArr.usdt,
+                to: tokenArr.PHRS
+            }
+        ]
+
+        console.log(timestamp(), chalk.yellowBright(`  ${signer.address} IS ADDING LIQUIDITY..`))
+
+        let cycle = 0
+        const maxCycle = 10
+
+        while (cycle < maxCycle) {
+            try {
+                const liqContract = new ethers.Contract(zenith.liqContract, abi, signer)
+
+                const randomPairIndex = Math.floor(Math.random() * pair.length)
+                const randomPair = pair[randomPairIndex]
+                const amount = "0.0001"
+
+                const ad = await new Token(randomPair.from, wallet).decimals()
+                const bd = await new Token(randomPair.to, wallet).decimals()
+
+                const am = ethers.parseUnits(amount, ad)
+                const bm = ethers.parseUnits(amount, bd)
+
+                await new Token(randomPair.from, wallet).approve(liqContract, am)
+                await new Token(randomPair.to, wallet).approve(liqContract, bm)
+
+                let nonce = await pharos.rpc.getTransactionCount(signer.address, "pending")
+                const d = Math.floor(Date.now() / 1000) + 1200
+                const tl = -60000
+                const th = 60000
+
+                const params = {
+                    token0: randomPair.from,
+                    token1: randomPair.to,
+                    fee: 500,
+                    tickLower: tl,
+                    tickUpper: th,
+                    amount0Desired: am,
+                    amount1Desired: bm,
+                    amount0Min: 0,
+                    amount1Min: 0,
+                    recipient: signer.address,
+                    deadline: d
+                }
+
+                const tx = await liqContract.mint(params, {
+                    gasLimit: 500000,
+                    nonce: nonce++
+                })
+
+                await tx.wait()
+
+                const receipt = await pharos.rpc.getTransactionReceipt(tx.hash)
+
+                if (receipt.status !== 1) {
+                    parentPort.postMessage({
+                        type: "failed",
+                        data: `❗ ${sender.address} FAILED VERIFYING TRANSACTION HASH`
+                    })
+                }
+
+                parentPort.postMessage({
+                    type: "success",
+                    data: {
+                        address: signer.address,
+                        hash: receipt.hash
+                    }
+                })
+            } catch (error) {
+                parentPort.postMessage({
+                    type: "error",
+                    data: chalk.redBright(error)
+                })
+            }
+
+            console.log(`${timestamp()} ${chalk.greenBright(`[+] ${signer.address} HAS COMPLETED LIQ CYCLE [${cycle}]`)}`)
+            await new Promise(resolve => setTimeout(resolve, 50000))
+        }
+
+        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${signer.address} FINISHED ${cycle} CYCLE OF ADDING LIQ`)} `)
+        parentPort.postMessage({
+            type: "done"
+        })
     }
 }
 

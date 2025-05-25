@@ -206,6 +206,43 @@ class Workers {
         })
     }
 
+    static async liqWorker(wallet) {
+        return new Promise((resolve, reject) => {
+            const worker = new Worker(path.resolve(__dirname, "./task/liq.js"), {
+                workerData: {
+                    wallet: wallet
+                }
+            })
+
+            worker.on("message", (message) => {
+                if (message.type === "done") {
+                    resolve()
+                }
+                if (message.type === "success") {
+                    console.log(`\n${timestamp()} ${chalk.greenBright(`✅ ${message.data.address} SUCCESSFULLY ADDING LIQUIDITY`)}`)
+                    console.log(`[+] HASH : ${message.data.hash}`)
+                    resolve()
+                }
+
+                if (message.type === "failed") {
+                    console.log(`\n${chalk.redBright(message.data)}`)
+                    resolve()
+                }
+
+                if (message.type === "error") {
+                    reject(new Error(message.data))
+                }
+            })
+
+            worker.on("error", reject)
+            worker.on("exit", (code) => {
+                if (code !== 0) {
+                    console.log("WORKER STOPPED")
+                }
+            })
+        })
+    }
+
     static async zenithFaucetWorker(walletAddress, proxy) {
         return new Promise((resolve, reject) => {
             const worker = new Worker(path.resolve(__dirname, "./task/zenithFaucet.js"), {
