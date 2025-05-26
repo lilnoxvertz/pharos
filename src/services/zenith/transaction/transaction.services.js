@@ -55,10 +55,12 @@ class Transaction {
         let maxCycle = 10
 
         while (cycle < maxCycle) {
+            const randomRecipientIndex = Math.floor(Math.random() * recipients.length)
+            const recipient = recipients[randomRecipientIndex]
             try {
                 console.log(`${timestamp()} ${chalk.yellowBright(`${sender.address} sending 0.00001 PHRS to ${recipients[i % recipients.length]}`)}`)
                 const tx = await sender.sendTransaction({
-                    to: recipients[i % recipients.length],
+                    to: recipient,
                     value: amount
                 })
 
