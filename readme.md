@@ -7,7 +7,7 @@
 
 3. fill wallet.txt with privateKey,address
 
-4. fill recipient.txt with wallet address that u wanted to send tokens
+4. fill recipient.txt with wallet address that u wanted to send tokens or just use the one provided
 
 ## COMMAND
 
