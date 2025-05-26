@@ -97,7 +97,7 @@ class Transaction {
 
             cycle++
             console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle}]`)}`)
-            await new Promise(resolve => setTimeout(resolve, 25000))
+            await new Promise(resolve => setTimeout(resolve, 40000))
         }
 
         console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SENDING TOKEN`)}`)
@@ -274,7 +274,7 @@ class Transaction {
             }
             cycle++
             console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SWAP CYCLE [${cycle}]`)}`)
-            await new Promise(resolve => setTimeout(resolve, 20000))
+            await new Promise(resolve => setTimeout(resolve, 40000))
         }
 
         console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SWAPPING`)}`)
@@ -344,7 +344,7 @@ class Transaction {
         const liqContract = new ethers.Contract(zenith.liqContract, abi, signer)
 
         let cycle = 0
-        const maxCycle = 3
+        const maxCycle = 10
 
         while (cycle < maxCycle) {
             cycle++
@@ -397,8 +397,6 @@ class Transaction {
                     })
                 }
 
-                console.log("sucea")
-
                 parentPort.postMessage({
                     type: "success",
                     data: {
@@ -416,7 +414,7 @@ class Transaction {
             }
 
             console.log(`${timestamp()} ${chalk.greenBright(`[+] ${signer.address} HAS COMPLETED LIQ CYCLE [${cycle}]`)}`)
-            await new Promise(resolve => setTimeout(resolve, 10000))
+            await new Promise(resolve => setTimeout(resolve, 40000))
         }
 
         console.log(`${timestamp()} ${chalk.greenBright(`✅ ${signer.address} FINISHED ${cycle} CYCLE OF ADDING LIQ`)} `)
