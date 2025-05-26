@@ -6,6 +6,8 @@ const rateLimitConfig = {
     maxAttempt: 3
 }
 
+const maxCycleConfig = 100 // ganti cycle disini
+
 const pharos = {
     rpc: new ethers.JsonRpcProvider("https://testnet.dplabs-internal.com"),
     contractAddress: "0x76aaada469d23216be5f7c596fa25f282ff9b364"
@@ -43,4 +45,4 @@ const authHeader = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0'
 }
 
-module.exports = { refferralCode, rateLimitConfig, pharos, authHeader, routerAddress, tokenArr, zenith }
+module.exports = { refferralCode, rateLimitConfig, pharos, authHeader, routerAddress, tokenArr, zenith, maxCycleConfig }

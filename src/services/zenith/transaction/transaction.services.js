@@ -1,5 +1,5 @@
 const { ethers, formatUnits } = require("ethers")
-const { pharos, routerAddress, tokenArr, zenith } = require("../../../config/config")
+const { pharos, routerAddress, tokenArr, zenith, maxCycleConfig } = require("../../../config/config")
 const { parentPort, workerData } = require("worker_threads")
 const PharosClient = require("../../pharos/pharos.services")
 const { HttpsProxyAgent } = require("https-proxy-agent")
@@ -52,13 +52,13 @@ class Transaction {
 
         let i = 0
         let cycle = 0
-        let maxCycle = 10
+        let maxCycle = maxCycleConfig
 
         while (cycle < maxCycle) {
             const randomRecipientIndex = Math.floor(Math.random() * recipients.length)
             const recipient = recipients[randomRecipientIndex]
             try {
-                console.log(`${timestamp()} ${chalk.yellowBright(`${sender.address} sending 0.00001 PHRS to ${recipients[i % recipients.length]}`)}`)
+                console.log(`${timestamp()} ${chalk.yellowBright(`${sender.address} sending 0.00001 PHRS to ${recipient}`)}`)
                 const tx = await sender.sendTransaction({
                     to: recipient,
                     value: amount
@@ -73,7 +73,7 @@ class Transaction {
                     return
                 }
 
-                console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} SUCCESSFULLY SENDING TOKEN TO ${recipients[i % recipients.length]}`)}`)
+                console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} SUCCESSFULLY SENDING TOKEN TO ${recipient}`)}`)
 
                 const report = await PharosClient.reportSendTokenTask(sender.address, token, tx.hash, agent)
 
@@ -97,7 +97,7 @@ class Transaction {
 
             cycle++
             console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle}]`)}`)
-            await new Promise(resolve => setTimeout(resolve, 40000))
+            await new Promise(resolve => setTimeout(resolve, 100000))
         }
 
         console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SENDING TOKEN`)}`)
@@ -158,7 +158,7 @@ class Transaction {
         ]
 
         let cycle = 0
-        let maxCycle = 10
+        let maxCycle = maxCycleConfig
 
         while (cycle < maxCycle) {
             const mode = Math.floor(Math.random() * swapMode.length)
@@ -274,7 +274,7 @@ class Transaction {
             }
             cycle++
             console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SWAP CYCLE [${cycle}]`)}`)
-            await new Promise(resolve => setTimeout(resolve, 40000))
+            await new Promise(resolve => setTimeout(resolve, 100000))
         }
 
         console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SWAPPING`)}`)
@@ -344,7 +344,7 @@ class Transaction {
         const liqContract = new ethers.Contract(zenith.liqContract, abi, signer)
 
         let cycle = 0
-        const maxCycle = 10
+        const maxCycle = maxCycleConfig
 
         while (cycle < maxCycle) {
             cycle++
@@ -414,7 +414,7 @@ class Transaction {
             }
 
             console.log(`${timestamp()} ${chalk.greenBright(`[+] ${signer.address} HAS COMPLETED LIQ CYCLE [${cycle}]`)}`)
-            await new Promise(resolve => setTimeout(resolve, 40000))
+            await new Promise(resolve => setTimeout(resolve, 100000))
         }
 
         console.log(`${timestamp()} ${chalk.greenBright(`✅ ${signer.address} FINISHED ${cycle} CYCLE OF ADDING LIQ`)} `)
