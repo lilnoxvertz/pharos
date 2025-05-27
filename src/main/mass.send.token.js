@@ -24,16 +24,6 @@ async function start() {
         const authTask = []
         const authDataArr = []
 
-        if (senderWalletArr.length === 0) {
-            console.log("no private keys found")
-            process.exit(1)
-        }
-
-        if (proxyArr.length === 0) {
-            console.log("no proxy found, using current ip")
-            maxWorker = 2
-        }
-
         for (let i = 0; i < senderWalletArr.length; i++) {
             const proxy = proxyArr.length === 0 ? "" : proxyArr[i % proxyArr.length]
             authTask.push(() => Workers.authWorker(senderWalletArr[i], refferralCode, proxy))

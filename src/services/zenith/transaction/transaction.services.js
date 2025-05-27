@@ -8,6 +8,27 @@ const chalk = require("chalk")
 const { timestamp } = require("../../../utils/timestamp")
 const Token = require("./token")
 
+const mintAbi = [{
+    "name": "mint",
+    "type": "function",
+    "inputs": [
+        {
+            "name": "_asset",
+            "type": "address"
+        },
+        {
+            "name": "_account",
+            "type": "address"
+        },
+        {
+            "name": "_amount",
+            "type": "uint256"
+        }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+}]
+
 class Transaction {
     static encodeMultiCallData(pair, amount, walletAddress) {
         const data = ethers.AbiCoder.defaultAbiCoder().encode(
@@ -38,6 +59,69 @@ class Transaction {
         } catch (error) {
             console.error(error)
         }
+    }
+
+    static async sendToken() {
+        const { wallet, proxy, token } = workerData
+
+        const sender = new ethers.Wallet(wallet, pharos.rpc)
+        const recipients = await Wallet.loadRecipientAddress()
+
+        const agent = proxy ? new HttpsProxyAgent(proxy) : undefined
+
+        const amount = ethers.parseEther("0.00001")
+
+        let i = 0
+        let cycle = 0
+        let maxCycle = maxCycleConfig
+
+        while (cycle < maxCycle) {
+            const randomRecipientIndex = Math.floor(Math.random() * recipients.length)
+            const recipient = recipients[randomRecipientIndex]
+            try {
+                console.log(`${timestamp()} ${chalk.yellowBright(`${sender.address} sending 0.00001 PHRS to ${recipient}`)}`)
+                const tx = await sender.sendTransaction({
+                    to: recipient,
+                    value: amount
+                })
+
+                await tx.wait()
+
+                const txStatus = await this.check(tx.hash)
+
+                if (txStatus.status !== 1) {
+                    console.log(`${timestamp()} ${chalk.redBright(`❗ ${sender.address} FAILED SENDING TOKEN!`)}`)
+                    return
+                }
+
+                console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} SUCCESSFULLY SENDING TOKEN TO ${recipient}`)}`)
+
+                const report = await PharosClient.reportSendTokenTask(sender.address, token, tx.hash, agent)
+
+                if (!report.status) {
+                    parentPort.postMessage({
+                        type: "failed",
+                        data: `❗ ${sender.address} SUCCESSFULLY SENDING TOKEN BUT FAILED TO REPORT IT.`
+                    })
+                }
+
+                i++
+                parentPort.postMessage({
+                    type: "success"
+                })
+            } catch (error) {
+                parentPort.postMessage({
+                    type: "error",
+                    data: error
+                })
+            }
+
+            cycle++
+            console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle}]`)}`)
+            await new Promise(resolve => setTimeout(resolve, 100000))
+        }
+
+        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SENDING TOKEN`)}`)
     }
 
     static async sendToken() {
@@ -154,7 +238,7 @@ class Transaction {
         const tokens = [
             tokenArr.usdc,
             tokenArr.usdt,
-            tokenArr.mai
+            tokenArr.PHRS
         ]
 
         let cycle = 0
@@ -171,9 +255,12 @@ class Transaction {
 
                         const amount = ethers.parseUnits("0.00001", 18)
                         const randomTokenIndex = Math.floor(Math.random() * tokens.length)
+                        let tokenIn = tokens[randomTokenIndex]
                         const tokenOut = tokens[randomTokenIndex]
 
-                        const tokenContract = new ethers.Contract(pharos.contractAddress, erc20Abi, sender)
+                        tokenIn === tokenOut ? tokenIn = tokenArr.PHRS : tokenIn
+
+                        const tokenContract = new ethers.Contract(tokenIn, erc20Abi, sender)
                         const balance = await tokenContract.balanceOf(sender.address)
                         const allowance = await tokenContract.allowance(sender.address, routerAddress)
 
@@ -227,8 +314,7 @@ class Transaction {
                             type: "success",
                             data: {
                                 address: sender.address,
-                                hash: receipt.hash,
-                                block: receipt.block
+                                hash: receipt.hash
                             }
                         })
 
@@ -418,6 +504,86 @@ class Transaction {
         }
 
         console.log(`${timestamp()} ${chalk.greenBright(`✅ ${signer.address} FINISHED ${cycle} CYCLE OF ADDING LIQ`)} `)
+        parentPort.postMessage({
+            type: "done"
+        })
+    }
+
+    static async mintZenithUsdc() {
+        const { wallet } = workerData
+
+        const signer = new ethers.Wallet(wallet, pharos.rpc)
+
+        const contract = new ethers.Contract("0x11de0e754f1df7c7b0d559721b334809a9c0dfb7", mintAbi, signer)
+        const amount = ethers.parseUnits("1000", 18)
+
+        try {
+            const tx = await contract.mint(tokenArr.usdc, signer.address, amount)
+            await tx.wait()
+
+            const receipt = await this.check(tx.hash)
+
+            if (receipt.status !== 1) {
+                parentPort.postMessage({
+                    type: "failed",
+                    data: `❗ ${sender.address} FAILED VERIFYING TRANSACTION HASH`
+                })
+            }
+
+            parentPort.postMessage({
+                type: "success",
+                data: {
+                    address: signer.address,
+                    hash: receipt.hash
+                }
+            })
+        } catch (error) {
+            parentPort.postMessage({
+                type: "error",
+                data: chalk.red(error)
+            })
+        }
+
+        parentPort.postMessage({
+            type: "done"
+        })
+    }
+
+    static async mintZenithUsdt() {
+        const { wallet } = workerData
+
+        const signer = new ethers.Wallet(wallet, pharos.rpc)
+
+        const contract = new ethers.Contract("0x11de0e754f1df7c7b0d559721b334809a9c0dfb7", mintAbi, signer)
+        const amount = ethers.parseUnits("1000", 18)
+
+        try {
+            const tx = await contract.mint(tokenArr.usdt, signer.address, amount)
+            await tx.wait()
+
+            const receipt = await this.check(tx.hash)
+
+            if (receipt.status !== 1) {
+                parentPort.postMessage({
+                    type: "failed",
+                    data: `❗ ${sender.address} FAILED VERIFYING TRANSACTION HASH`
+                })
+            }
+
+            parentPort.postMessage({
+                type: "success",
+                data: {
+                    address: signer.address,
+                    hash: receipt.hash
+                }
+            })
+        } catch (error) {
+            parentPort.postMessage({
+                type: "error",
+                data: chalk.red(error)
+            })
+        }
+
         parentPort.postMessage({
             type: "done"
         })

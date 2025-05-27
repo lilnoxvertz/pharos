@@ -11,6 +11,7 @@
     "cekin": "node ./src/main/checkin.js",
     "send": "node ./src/main/mass.send.token.js",
     "faucet": "node ./src/main/get.faucet.js",
+    "zenith": "node ./src/main/get.zenith.faucet.js",
     "swap": "node ./src/main/swap.token.js",
     "liq": "node ./src/main/add.liquidity.js",
     "point": "node ./src/main/get.points.js",
@@ -18,6 +19,7 @@
   },
   "dependencies": {
     "chalk": "^4.1.2",
+    "dotenv": "^16.5.0",
     "ethers": "6.14.1",
     "https-proxy-agent": "7.0.6",
     "moment-timezone": "^0.5.48",

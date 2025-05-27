@@ -31,9 +31,17 @@
 
 - CLAIMING FAUCET
 
-  ```bash
-  npm run faucet
-  ```
+1.  claiming pharos faucet (u needed to connect ur X account for it to be successs)
+
+```bash
+npm run faucet
+```
+
+2. claiming zenith usdt and usdc
+
+```bash
+npm run zenith
+```
 
 - SENDING TOKEN TO WALLET
 
@@ -53,10 +61,9 @@
   ```bash
   npm run point
   ```
+
 ## NOTE
 
 for referral, go to config.js and change the referralCode with yours
 
 ## SUPPORT DEV BUAT BELI GACOAN DAN UDANG KEJU https://trakteer.id/noxxx7
-
-

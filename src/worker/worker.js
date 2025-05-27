@@ -183,7 +183,6 @@ class Workers {
                 if (message.type === "success") {
                     console.log(`\n${timestamp()} ${chalk.greenBright(`✅ ${message.data.address} SUCCESSFULLY SWAPPING TOKEN`)}`)
                     console.log(`[+] HASH               : ${message.data.hash}`)
-                    console.log(`[+] CONFIRMED ON BLOCK : ${message.data.block}`)
                     resolve()
                 }
 
@@ -297,6 +296,80 @@ class Workers {
 
                 if (message.type === "failed") {
                     console.log(chalk.redBright(message.data))
+                    resolve()
+                }
+
+                if (message.type === "error") {
+                    reject(new Error(message.data))
+                }
+            })
+
+            worker.on("error", reject)
+            worker.on("exit", (code) => {
+                if (code !== 0) {
+                    console.log("WORKER STOPPED")
+                }
+            })
+        })
+    }
+
+    static async zenithUsdcWorker(wallet) {
+        return new Promise((resolve, reject) => {
+            const worker = new Worker(path.resolve(__dirname, "./task/zenithUsdc.js"), {
+                workerData: {
+                    wallet: wallet
+                }
+            })
+
+            worker.on("message", (message) => {
+                if (message.type === "done") {
+                    resolve()
+                }
+                if (message.type === "success") {
+                    console.log(`\n${timestamp()} ${chalk.greenBright(`✅ ${message.data.address} SUCCESSFULLY MINTING USDC`)}`)
+                    console.log(`[+] HASH               : ${message.data.hash}`)
+                    resolve()
+                }
+
+                if (message.type === "failed") {
+                    console.log(`\n${chalk.redBright(message.data)}`)
+                    resolve()
+                }
+
+                if (message.type === "error") {
+                    reject(new Error(message.data))
+                }
+            })
+
+            worker.on("error", reject)
+            worker.on("exit", (code) => {
+                if (code !== 0) {
+                    console.log("WORKER STOPPED")
+                }
+            })
+        })
+    }
+
+    static async zenithUsdtWorker(wallet) {
+        return new Promise((resolve, reject) => {
+            const worker = new Worker(path.resolve(__dirname, "./task/zenithUsdt.js"), {
+                workerData: {
+                    wallet: wallet
+                }
+            })
+
+            worker.on("message", (message) => {
+                if (message.type === "done") {
+                    resolve()
+                }
+                if (message.type === "success") {
+                    console.log(`\n${timestamp()} ${chalk.greenBright(`✅ ${message.data.address} SUCCESSFULLY MINTING USDT`)}`)
+                    console.log(`[+] HASH               : ${message.data.hash}`)
+                    resolve()
+                }
+
+                if (message.type === "failed") {
+                    console.log(`\n${chalk.redBright(message.data)}`)
                     resolve()
                 }
 
