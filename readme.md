@@ -33,15 +33,15 @@
 
 1.  claiming pharos faucet (u needed to connect ur X account for it to be successs)
 
-```bash
-npm run faucet
-```
+   ```bash
+   npm run faucet
+   ```
 
 2. claiming zenith usdt and usdc
 
-```bash
-npm run zenith
-```
+   ```bash
+   npm run zenith
+   ```
 
 - SENDING TOKEN TO WALLET
 
