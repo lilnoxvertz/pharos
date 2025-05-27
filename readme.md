@@ -9,6 +9,11 @@
 
 4. fill recipient.txt with wallet address that u wanted to send tokens or just use the one provided
 
+5. go to config/config.js and change this line value to any amount that u want
+   ```bash
+   maxCycleConfig = 5
+   ```
+
 ## COMMAND
 
 - GENERATE WALLET
