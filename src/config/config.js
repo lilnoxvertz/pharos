@@ -6,7 +6,7 @@ const rateLimitConfig = {
     maxAttempt: 3
 }
 
-const maxCycleConfig = 100 // ganti cycle disini
+const maxCycleConfig = 100 // change this line
 
 const pharos = {
     rpc: new ethers.JsonRpcProvider("https://testnet.dplabs-internal.com"),
