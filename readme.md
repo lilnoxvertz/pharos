@@ -55,7 +55,7 @@
   ```
 - ADDING LIQUIDITY
   ```bash
-  npm run lig
+  npm run liq
   ```
 - SHOWING POINTS
   ```bash
