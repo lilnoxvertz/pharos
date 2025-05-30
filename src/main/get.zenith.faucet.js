@@ -2,6 +2,7 @@ const chalk = require("chalk")
 const { timestamp } = require("../utils/timestamp")
 const Wallet = require("../utils/wallet.utils")
 const Workers = require("../worker/worker")
+const { skibidi } = require("../config/config")
 
 async function start() {
     let maxWorker = 5
@@ -10,11 +11,11 @@ async function start() {
         const walletArr = await Wallet.load()
 
         if (walletArr.length === 0) {
-            console.log("no private key found!")
+            skibidi.failed("NO PRIVATE KEY FOUND")
             process.exit(1)
         }
 
-        console.log(`[LOADED ${walletArr.length} WALLET]`)
+        skibidi.success(`[LOADED ${walletArr.length} WALLET]`)
 
         const mintUsdcTask = []
         const mintUsdtTask = []
@@ -22,20 +23,22 @@ async function start() {
             mintUsdcTask.push(() => Workers.zenithUsdcWorker(walletArr[i]))
         }
 
-        console.log("STARTING USDC FAUCET WORKERS")
-        await Workers.startLimitedTask(mintUsdcTask, maxWorker)
+        skibidi.processing("[STARTING USDC FAUCET WORKERS]")
+        const a = await Workers.startLimitedTask(mintUsdcTask, maxWorker)
+        console.log(a)
 
         for (let j = 0; j < walletArr.length; j++) {
             mintUsdtTask.push(() => Workers.zenithUsdtWorker(walletArr[j]))
         }
 
-        console.log("STARTING USDT FAUCET WORKERS")
-        await Workers.startLimitedTask(mintUsdtTask, maxWorker)
+        skibidi.processing("[STARTING USDT FAUCET WORKERS]")
+        const b = await Workers.startLimitedTask(mintUsdtTask, maxWorker)
+        console.log(b)
     } catch (error) {
-        console.error(error)
+        skibidi.failed(error)
     }
 
-    console.log(timestamp(), chalk.greenBright("  DONE"))
+    skibidi.success("TASKS DONE")
 }
 
 start()

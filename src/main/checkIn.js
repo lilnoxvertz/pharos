@@ -1,6 +1,6 @@
 const Proxy = require("../utils/proxy.utils")
 const Wallet = require("../utils/wallet.utils")
-const { refferralCode } = require("../config/config")
+const { refferralCode, skibidi } = require("../config/config")
 const Workers = require("../worker/worker")
 
 async function start() {
@@ -10,29 +10,29 @@ async function start() {
         const walletArr = await Wallet.load()
         const proxyArr = await Proxy.load()
 
-        console.log(`[LOADED ${walletArr.length} WALLET]`)
-        console.log(`[LOADED ${proxyArr.length} PROXY]`)
-
         if (walletArr.length === 0) {
-            console.log("❗no private key found!")
+            skibidi.warn("NO PRIVATE KEY FOUND")
             process.exit(1)
         }
 
         if (proxyArr.length === 0) {
-            console.log("❗no proxy found, using current ip")
+            skibidi.warn("NO PROXY")
             maxWorker = 2
         }
+
+        skibidi.success(`[LOADED ${walletArr.length} WALLET]`)
+        skibidi.success(`[LOADED ${proxyArr.length} PROXY]`)
 
         const authTask = []
         const authDataArr = []
         const checkinTask = []
 
         for (let i = 0; i < walletArr.length; i++) {
-            const proxy = proxyArr.length === 0 ? "" : proxyArr[i % proxyArr.length]
+            const proxy = await Proxy.get(proxyArr, i)
             authTask.push(() => Workers.authWorker(walletArr[i], refferralCode, proxy))
         }
 
-        console.log("\n[STARTING LOGIN WORKER]")
+        skibidi.processing("[STARTING LOGIN WORKERS]")
         const authData = await Workers.startLimitedTask(authTask, maxWorker)
 
         walletArr.forEach((pk, index) => {
@@ -43,17 +43,17 @@ async function start() {
         })
 
         for (let j = 0; j < authDataArr.length; j++) {
-            const proxy = proxyArr.length === 0 ? "" : proxyArr[j % proxyArr.length]
+            const proxy = await Proxy.get(proxyArr, j)
             checkinTask.push(() => Workers.checkInWorker(authDataArr[j].token, authDataArr[j].address, proxy))
         }
 
-        console.log("\n[STARTING CHECK IN WORKERS]")
+        skibidi.processing("[STARTING CHECK IN WORKERS]")
         await Workers.startLimitedTask(checkinTask, maxWorker)
-
-        console.log("\nDONE!")
     } catch (error) {
-        console.error(error)
+        skibidi.failed(error)
     }
+
+    skibidi.success("TASKS DONE")
 }
 
 start()

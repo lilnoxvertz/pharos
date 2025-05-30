@@ -1,15 +1,33 @@
+const { JsonRpcProvider } = require("ethers")
 const { ethers } = require("ethers")
+const { timestamp } = require("../utils/timestamp")
+const chalk = require("chalk")
 
 const refferralCode = "PIeu5IbkQuQfH7zd"
+
+const skibidi = {
+    success: (msg) => {
+        console.log(timestamp(), chalk.greenBright(msg))
+    },
+    failed: (msg) => {
+        console.log(timestamp(), chalk.redBright(msg))
+    },
+    processing: (msg) => {
+        console.log(timestamp(), chalk.yellowBright(msg))
+    },
+    warn: (msg) => {
+        console.log(timestamp(), chalk.rgb(255, 165, 0)(msg))
+    }
+}
 
 const rateLimitConfig = {
     maxAttempt: 3
 }
 
-const maxCycleConfig = 100 // change this line
+const maxCycleConfig = 10 // change this line
 
 const pharos = {
-    rpc: new ethers.JsonRpcProvider("https://testnet.dplabs-internal.com"),
+    rpc: new JsonRpcProvider("https://testnet.dplabs-internal.com"),
     contractAddress: "0x76aaada469d23216be5f7c596fa25f282ff9b364"
 }
 
@@ -45,4 +63,4 @@ const authHeader = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0'
 }
 
-module.exports = { refferralCode, rateLimitConfig, pharos, authHeader, routerAddress, tokenArr, zenith, maxCycleConfig }
+module.exports = { refferralCode, rateLimitConfig, pharos, authHeader, routerAddress, tokenArr, zenith, maxCycleConfig, skibidi }

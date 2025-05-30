@@ -2,6 +2,7 @@ const { Worker } = require("worker_threads")
 const path = require("path")
 const { timestamp } = require("../utils/timestamp")
 const chalk = require("chalk")
+const { skibidi } = require("../config/config")
 
 class Workers {
     static async authWorker(privateKey, reffCode, proxy) {
@@ -23,7 +24,7 @@ class Workers {
                     const address = message.data.address
                     const token = message.data.token
 
-                    console.log(`${timestamp()} ${chalk.greenBright(`✅ ${address} SUCCESSFULLY RETRIEVED A TOKEN`)}`)
+                    skibidi.success(`${address} SUCCESSFULLY RETRIEVING AUTH TOKEN`)
                     resolve({
                         address: address,
                         token: token
@@ -31,7 +32,7 @@ class Workers {
                 }
 
                 if (message.type === "failed") {
-                    console.log(`${timestamp()} ${message.data}`)
+                    skibidi.failed(message.data)
                     resolve()
                 }
 
@@ -66,16 +67,16 @@ class Workers {
 
                 if (message.type === "success") {
                     if (message.data.result === 1) {
-                        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${message.data.address} HAS CHECKED IN ALREADY`)}`)
+                        skibidi.warn(`${message.data.address} HAS CHECKED IN ALREADY`)
                         resolve()
                     } else {
-                        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${message.data.address} SUCCESSFULLY CHECKING IN`)}`)
+                        skibidi.success(`${message.data.address} SUCCESSFULLY CHECKING IN`)
                         resolve()
                     }
                 }
 
                 if (message.type === "failed") {
-                    console.log(chalk.redBright(message.data))
+                    skibidi.failed(message.data)
                 }
 
                 if (message.type === "error") {
@@ -112,7 +113,7 @@ class Workers {
                 }
 
                 if (message.type === "failed") {
-                    console.log(`${timestamp()} ${chalk.redBright(message.data)}`)
+                    skibidi.failed(message.data)
                     resolve()
                 }
 
@@ -144,13 +145,14 @@ class Workers {
                 if (message.type === "done") {
                     resolve()
                 }
+
                 if (message.type === "success") {
-                    console.log(`${timestamp()} ${`✅ ${message.data.address} SUCCESSFULLY CLAIMED FAUCET`}`)
+                    skibidi.success(`${message.data.address} SUCCESSFULLY CLAIMED PHRS FAUCET`)
                     resolve()
                 }
 
                 if (message.type === "failed") {
-                    console.log(`${timestamp()} ${message.data}`)
+                    skibidi.failed(message.data)
                     resolve()
                 }
 
@@ -180,14 +182,14 @@ class Workers {
                 if (message.type === "done") {
                     resolve()
                 }
+
                 if (message.type === "success") {
-                    console.log(`\n${timestamp()} ${chalk.greenBright(`✅ ${message.data.address} SUCCESSFULLY SWAPPING TOKEN`)}`)
-                    console.log(`[+] HASH               : ${message.data.hash}`)
+                    skibidi.success(`${message.data.address} SUCCESSFULLY SWAPPED A TOKEN`)
                     resolve()
                 }
 
                 if (message.type === "failed") {
-                    console.log(`\n${chalk.redBright(message.data)}`)
+                    skibidi.failed(message.data)
                     resolve()
                 }
 
@@ -218,13 +220,12 @@ class Workers {
                     resolve()
                 }
                 if (message.type === "success") {
-                    console.log(`\n${timestamp()} ${chalk.greenBright(`✅ ${message.data.address} SUCCESSFULLY ADDING LIQUIDITY`)}`)
-                    console.log(`[+] HASH : ${message.data.hash}`)
+                    skibidi.success(`${message.data.address} SUCCESSFULLY ADDING LIQUIDITY`)
                     resolve()
                 }
 
                 if (message.type === "failed") {
-                    console.log(`\n${chalk.redBright(message.data)}`)
+                    skibidi.failed(message.data)
                     resolve()
                 }
 
@@ -242,23 +243,22 @@ class Workers {
         })
     }
 
-    static async zenithFaucetWorker(walletAddress, proxy) {
+    static async zenithFaucetWorker(walletAddress) {
         return new Promise((resolve, reject) => {
             const worker = new Worker(path.resolve(__dirname, "./task/zenithFaucet.js"), {
                 workerData: {
-                    walletAddress: walletAddress,
-                    proxy: proxy
+                    walletAddress: walletAddress
                 }
             })
 
             worker.on("message", (message) => {
-                if (message.type === "success") {
-                    console.log(message.data)
+                if (message.type === "done") {
+                    skibidi.success(message.data)
                     resolve()
                 }
 
                 if (message.type === "failed") {
-                    console.log(message.data)
+                    skibidi.failed(message.data)
                     resolve()
                 }
 
@@ -295,7 +295,7 @@ class Workers {
                 }
 
                 if (message.type === "failed") {
-                    console.log(chalk.redBright(message.data))
+                    skibidi.failed(message.data)
                     resolve()
                 }
 
@@ -323,16 +323,12 @@ class Workers {
 
             worker.on("message", (message) => {
                 if (message.type === "done") {
-                    resolve()
-                }
-                if (message.type === "success") {
-                    console.log(`\n${timestamp()} ${chalk.greenBright(`✅ ${message.data.address} SUCCESSFULLY MINTING USDC`)}`)
-                    console.log(`[+] HASH               : ${message.data.hash}`)
+                    skibidi.success(`${message.data.address} SUCCESSFULLY MINTED USDC`)
                     resolve()
                 }
 
                 if (message.type === "failed") {
-                    console.log(`\n${chalk.redBright(message.data)}`)
+                    skibidi.failed(message.data)
                     resolve()
                 }
 
@@ -360,16 +356,12 @@ class Workers {
 
             worker.on("message", (message) => {
                 if (message.type === "done") {
-                    resolve()
-                }
-                if (message.type === "success") {
-                    console.log(`\n${timestamp()} ${chalk.greenBright(`✅ ${message.data.address} SUCCESSFULLY MINTING USDT`)}`)
-                    console.log(`[+] HASH               : ${message.data.hash}`)
+                    skibidi.success(`${message.data.address} SUCCESSFULLY MINTED USDT`)
                     resolve()
                 }
 
                 if (message.type === "failed") {
-                    console.log(`\n${chalk.redBright(message.data)}`)
+                    skibidi.failed(message.data)
                     resolve()
                 }
 

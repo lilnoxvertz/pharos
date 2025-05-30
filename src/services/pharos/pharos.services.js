@@ -1,9 +1,7 @@
 const { HttpsProxyAgent } = require("https-proxy-agent")
-const { authHeader, rateLimitConfig } = require("../../config/config")
+const { authHeader, rateLimitConfig, skibidi } = require("../../config/config")
 const { parentPort, workerData } = require("worker_threads")
 const ZenithClient = require("../zenith/zenith.services")
-const chalk = require("chalk")
-const { timestamp } = require("../../utils/timestamp")
 
 class PharosClient {
     static async checkIn() {
@@ -25,7 +23,7 @@ class PharosClient {
         if (!success && checkInAttempt === maxAttempt) {
             parentPort.postMessage({
                 type: "failed",
-                data: `❗ ${walletAddress} FAILED DOING CHECK IN TASK.`
+                data: `${walletAddress} FAILED DOING CHECK IN TASK.`
             })
         }
 
@@ -41,7 +39,7 @@ class PharosClient {
                 const result = await response.json()
 
                 if (!response.ok) {
-                    console.log(chalk.redBright(`❗ ${walletAddress} FAILED TO DO CHECK IN. RETRYING`))
+                    skibidi.failed(`${walletAddress} FAILED DOING CHECK IN TASK. RETRYING (${checkInAttempt}/${maxAttempt})`)
                     await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }
@@ -62,8 +60,9 @@ class PharosClient {
                 })
             }
         }
+
         parentPort.postMessage({
-            type: "done",
+            type: "done"
         })
     }
 
@@ -79,7 +78,14 @@ class PharosClient {
         let attempt = 0
         let maxAttempt = rateLimitConfig.maxAttempt
 
+        if (!verified && attempt === maxAttempt) {
+            return {
+                status: false
+            }
+        }
+
         while (!verified && attempt < maxAttempt) {
+            attempt++
             try {
                 const response = await fetch(url, {
                     method: "POST",
@@ -92,28 +98,29 @@ class PharosClient {
                     const text = await response.text()
                     result = text ? JSON.parse(text) : {}
                 } catch (jsonError) {
-                    console.log(chalk.redBright(`Warning: Failed to parse JSON from response for ${walletAddress}:`, jsonError))
+                    skibidi.failed(`${walletAddress} FAILED PARSING JSON`)
                     result = {}
                 }
 
                 const status = result?.data?.verified
 
                 if (!status) {
-                    console.log(`${timestamp()} ${chalk.redBright(`[FAILED VERIFYING TASK FOR ${walletAddress}]`)}`)
-                    console.log(`${timestamp()} ${chalk.redBright(`📃 TX HASH : ${txhash}`)}`)
+                    skibidi.failed(`${walletAddress} FAILED VERIFYING TASK. RETRYING (${attempt}/${maxAttempt})`)
                     await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }
 
-                console.log(`${timestamp()} ${chalk.greenBright(`✅ SUCCESSFULLY REPORTING TASK FOR ${walletAddress}`)}`)
+                skibidi.success(`${walletAddress} SUCCESSFULLY REPORTING TASK`)
 
                 return {
-                    status: status ?? false
+                    status: true
                 }
             } catch (error) {
-                console.log(`\n${timestamp()} ${chalk.redBright(`❗ ERROR VERIFYING TASK`)}`)
+                skibidi.failed(`${walletAddress} ERROR VERIFYING TASK`)
             }
         }
+
+        return
     }
 
     static async getFaucet() {
@@ -127,8 +134,14 @@ class PharosClient {
 
         let success = false
         let attempt = 0
-
         const maxAttempt = rateLimitConfig.maxAttempt
+
+        if (!success && attempt === maxAttempt) {
+            parentPort.postMessage({
+                type: "failed",
+                data: `${walletAddress} FAILED GETTING FAUCET`
+            })
+        }
 
         while (!success && attempt < maxAttempt) {
             attempt++
@@ -147,7 +160,7 @@ class PharosClient {
                     const text = await response.text()
                     result = text ? JSON.parse(text) : {}
                 } catch (jsonError) {
-                    console.warn(chalk.redBright(`Warning: Failed to parse JSON from response for ${walletAddress}:`, jsonError))
+                    skibidi.failed(`${walletAddress} FAILED PARSING JSON`)
                     result = {}
                 }
 
@@ -156,12 +169,12 @@ class PharosClient {
                     if (status === false) {
                         parentPort.postMessage({
                             type: "failed",
-                            data: `❗ ${walletAddress} ALREADY CLAIMED PHRS FAUCET TODAY!`
+                            data: `${walletAddress} ALREADY CLAIMED PHRS FAUCET TODAY!`
                         })
                         break
                     }
 
-                    console.log(`❗ FAILED GETTING PHRS FAUCET FOR ${walletAddress}. RETRYING`)
+                    skibidi.failed(`${walletAddress} FAILED GETTING PHRS FAUCET. RETRYING (${attempt}/${maxAttempt})`)
                     await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }
@@ -181,8 +194,9 @@ class PharosClient {
                 })
             }
         }
+
         parentPort.postMessage({
-            type: "done",
+            type: "done"
         })
     }
 
@@ -201,6 +215,11 @@ class PharosClient {
         let attempt = 0
         let maxAttempt = rateLimitConfig.maxAttempt
 
+        if (!success && attempt === maxAttempt) {
+            skibidi.failed(`${walletAddress} FAILED GETTING FAUCET STATUS`)
+            return
+        }
+
         while (!success && attempt < maxAttempt) {
             attempt++
             try {
@@ -213,7 +232,7 @@ class PharosClient {
                 const result = await response.json()
 
                 if (!response.ok) {
-                    console.log(`❗ ${walletAddress} FAILED GETTING FAUCET STATUS. RETRYING`)
+                    skibidi.failed(`${walletAddress} FAILED GETTING FAUCET STATUS. RETRYING (${attempt}/${maxAttempt})`)
                     await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }
@@ -223,9 +242,11 @@ class PharosClient {
 
                 return faucetStatus
             } catch (error) {
-                console.error(error)
+                skibidi.failed(error)
             }
         }
+
+        return
     }
 
     static async getPoint() {
@@ -248,7 +269,7 @@ class PharosClient {
             if (!response.ok) {
                 parentPort.postMessage({
                     type: "failed",
-                    data: `❗ ${walletAddress} FAILED GETTING POINTS`
+                    data: `${walletAddress} FAILED GETTING POINTS`
                 })
             }
             const result = await response.json()

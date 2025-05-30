@@ -1,5 +1,5 @@
 const { ethers, formatUnits } = require("ethers")
-const { pharos, routerAddress, tokenArr, zenith, maxCycleConfig } = require("../../../config/config")
+const { pharos, routerAddress, tokenArr, zenith, maxCycleConfig, skibidi } = require("../../../config/config")
 const { parentPort, workerData } = require("worker_threads")
 const PharosClient = require("../../pharos/pharos.services")
 const { HttpsProxyAgent } = require("https-proxy-agent")
@@ -7,6 +7,18 @@ const Wallet = require("../../../utils/wallet.utils")
 const chalk = require("chalk")
 const { timestamp } = require("../../../utils/timestamp")
 const Token = require("./token")
+const Proxy = require("../../../utils/proxy.utils")
+
+const proxy = Proxy.load()
+const randomIndex = Math.floor(Math.random() * proxy.length)
+const agent = proxy ? new HttpsProxyAgent(proxy[randomIndex]) : undefined
+
+globalThis.fetch = (url, options = {}) => {
+    return fetch(url, {
+        ...options,
+        agent
+    })
+}
 
 const mintAbi = [{
     "name": "mint",
@@ -63,11 +75,13 @@ class Transaction {
 
     static async sendToken() {
         const { wallet, proxy, token } = workerData
-
-        const sender = new ethers.Wallet(wallet, pharos.rpc)
         const recipients = await Wallet.loadRecipientAddress()
 
         const agent = proxy ? new HttpsProxyAgent(proxy) : undefined
+
+
+
+        const sender = new ethers.Wallet(wallet, pharos.rpc)
 
         const amount = ethers.parseEther("0.00001")
 
@@ -79,7 +93,7 @@ class Transaction {
             const randomRecipientIndex = Math.floor(Math.random() * recipients.length)
             const recipient = recipients[randomRecipientIndex]
             try {
-                console.log(`${timestamp()} ${chalk.yellowBright(`${sender.address} sending 0.00001 PHRS to ${recipient}`)}`)
+                skibidi.processing(`${sender.address} SENDING 0.00001 PHRS TO ${recipient}`)
                 const tx = await sender.sendTransaction({
                     to: recipient,
                     value: amount
@@ -87,21 +101,21 @@ class Transaction {
 
                 await tx.wait()
 
-                const txStatus = await this.check(tx.hash)
+                const txStatus = await this.check(tx.hash, agent)
 
                 if (txStatus.status !== 1) {
-                    console.log(`${timestamp()} ${chalk.redBright(`❗ ${sender.address} FAILED SENDING TOKEN!`)}`)
+                    skibidi.failed(`${sender.address} FAILED VERIFYING HASH`)
                     return
                 }
 
-                console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} SUCCESSFULLY SENDING TOKEN TO ${recipient}`)}`)
+                skibidi.success(`${sender.address} SUCCESSFULLY SENDING 0.00001 PHRS TO ${recipient}`)
 
                 const report = await PharosClient.reportSendTokenTask(sender.address, token, tx.hash, agent)
 
                 if (!report.status) {
                     parentPort.postMessage({
                         type: "failed",
-                        data: `❗ ${sender.address} SUCCESSFULLY SENDING TOKEN BUT FAILED TO REPORT IT.`
+                        data: `${sender.address} SUCCESSFULLY SENDING TOKEN BUT FAILED TO REPORT IT.`
                     })
                 }
 
@@ -110,6 +124,7 @@ class Transaction {
                     type: "success"
                 })
             } catch (error) {
+                skibidi.failed(`${sender.address} TRANSACTION REVERTED`)
                 parentPort.postMessage({
                     type: "error",
                     data: error
@@ -117,74 +132,18 @@ class Transaction {
             }
 
             cycle++
-            console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle}]`)}`)
-            await new Promise(resolve => setTimeout(resolve, 100000))
-        }
-
-        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SENDING TOKEN`)}`)
-    }
-
-    static async sendToken() {
-        const { wallet, proxy, token } = workerData
-
-        const sender = new ethers.Wallet(wallet, pharos.rpc)
-        const recipients = await Wallet.loadRecipientAddress()
-
-        const agent = proxy ? new HttpsProxyAgent(proxy) : undefined
-
-        const amount = ethers.parseEther("0.00001")
-
-        let i = 0
-        let cycle = 0
-        let maxCycle = maxCycleConfig
-
-        while (cycle < maxCycle) {
-            const randomRecipientIndex = Math.floor(Math.random() * recipients.length)
-            const recipient = recipients[randomRecipientIndex]
-            try {
-                console.log(`${timestamp()} ${chalk.yellowBright(`${sender.address} sending 0.00001 PHRS to ${recipient}`)}`)
-                const tx = await sender.sendTransaction({
-                    to: recipient,
-                    value: amount
-                })
-
-                await tx.wait()
-
-                const txStatus = await this.check(tx.hash)
-
-                if (txStatus.status !== 1) {
-                    console.log(`${timestamp()} ${chalk.redBright(`❗ ${sender.address} FAILED SENDING TOKEN!`)}`)
-                    return
-                }
-
-                console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} SUCCESSFULLY SENDING TOKEN TO ${recipient}`)}`)
-
-                const report = await PharosClient.reportSendTokenTask(sender.address, token, tx.hash, agent)
-
-                if (!report.status) {
-                    parentPort.postMessage({
-                        type: "failed",
-                        data: `❗ ${sender.address} SUCCESSFULLY SENDING TOKEN BUT FAILED TO REPORT IT.`
-                    })
-                }
-
-                i++
-                parentPort.postMessage({
-                    type: "success"
-                })
-            } catch (error) {
-                parentPort.postMessage({
-                    type: "error",
-                    data: error
-                })
+            if (cycle === maxCycle) {
+                break
+            } else {
+                skibidi.processing(`${sender.address} COMPLETED (${cycle}/${maxCycle}) CYCLE`)
+                await new Promise(resolve => setTimeout(resolve, 100000))
             }
-
-            cycle++
-            console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SENDING CYCLE [${cycle}]`)}`)
-            await new Promise(resolve => setTimeout(resolve, 100000))
         }
 
-        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SENDING TOKEN`)}`)
+        skibidi.success(`${sender.address} HAS SUCCESSFULLY COMPLETED (${cycle}/${maxCycle}) CYCLE`)
+        parentPort.postMessage({
+            type: "done"
+        })
     }
 
     static async deposit(contract, value) {
@@ -193,9 +152,9 @@ class Transaction {
         return
     }
 
-
     static async swapToken() {
         const { wallet } = workerData
+
         const sender = new ethers.Wallet(wallet, pharos.rpc)
 
         const erc20Abi = [
@@ -246,7 +205,7 @@ class Transaction {
 
         while (cycle < maxCycle) {
             const mode = Math.floor(Math.random() * swapMode.length)
-
+            skibidi.processing(`${sender.address} IS TRYING TO SWAP A TOKEN`)
             try {
                 switch (mode) {
                     case 0:
@@ -273,7 +232,7 @@ class Transaction {
                             if (depositReceipt.status !== 1) {
                                 parentPort.postMessage({
                                     type: "failed",
-                                    data: `❗ ${sender.address} HAS INSUFFICIENT AMOUNT`
+                                    data: `${sender.address} HAS INSUFFICIENT AMOUNT`
                                 })
                             }
                         }
@@ -301,20 +260,19 @@ class Transaction {
                         })
 
                         await tx.wait()
-                        const receipt = await this.check(tx.hash)
+                        const receipt = await this.check(tx.hash, agent)
 
                         if (receipt.status !== 1) {
                             parentPort.postMessage({
                                 type: "failed",
-                                data: `❗ ${sender.address} FAILED VERIFYING TRANSACTION HASH`
+                                data: `${sender.address} FAILED VERIFYING TRANSACTION HASH`
                             })
                         }
 
                         parentPort.postMessage({
                             type: "success",
                             data: {
-                                address: sender.address,
-                                hash: receipt.hash
+                                address: sender.address
                             }
                         })
 
@@ -328,7 +286,7 @@ class Transaction {
                         if (pharosBalance < amountToDeposit) {
                             parentPort.postMessage({
                                 type: failed,
-                                data: `❗ ${sender.address} HAS INSUFFICIENT BALANCE`
+                                data: `${sender.address} HAS INSUFFICIENT BALANCE`
                             })
                         }
 
@@ -340,30 +298,34 @@ class Transaction {
                         if (depositReceipt.status !== 1) {
                             parentPort.postMessage({
                                 type: "failed",
-                                data: `❗ ${sender.address} FAILED VERIFYING TRANSACTION HASH`
+                                data: `${sender.address} FAILED VERIFYING TRANSACTION HASH`
                             })
                         }
 
                         parentPort.postMessage({
                             type: "success",
                             data: {
-                                address: sender.address,
-                                hash: depositReceipt.hash
+                                address: sender.address
                             }
                         })
                 }
             } catch (error) {
+                skibidi.failed(`${sender.address} TRANSACTION REVERTED`)
                 parentPort.postMessage({
                     type: "error",
                     data: error
                 })
             }
             cycle++
-            console.log(`${timestamp()} ${chalk.greenBright(`[+] ${sender.address} HAS COMPLETED SWAP CYCLE [${cycle}]`)}`)
-            await new Promise(resolve => setTimeout(resolve, 100000))
+            if (cycle === maxCycle) {
+                break
+            } else {
+                skibidi.processing(`${sender.address} COMPLETED (${cycle}/${maxCycle}) CYCLE`)
+                await new Promise(resolve => setTimeout(resolve, 100000))
+            }
         }
 
-        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${sender.address} FINISHED ${cycle} CYCLE OF SWAPPING`)}`)
+        skibidi.success(`${sender.address} HAS SUCCESSFULLY COMPLETED (${cycle}/${maxCycle}) CYCLE`)
         parentPort.postMessage({
             type: "done"
         })
@@ -426,14 +388,13 @@ class Transaction {
             }
         ]
 
-        console.log(timestamp(), chalk.yellowBright(`  ${signer.address} IS ADDING LIQUIDITY..`))
+        skibidi.processing(`${signer.address} IS ADDING LIQUIDITY..`)
         const liqContract = new ethers.Contract(zenith.liqContract, abi, signer)
 
         let cycle = 0
         const maxCycle = maxCycleConfig
 
         while (cycle < maxCycle) {
-            cycle++
             try {
                 const randomPairIndex = Math.floor(Math.random() * pair.length)
                 const randomPair = pair[randomPairIndex]
@@ -479,31 +440,35 @@ class Transaction {
                 if (receipt.status !== 1) {
                     parentPort.postMessage({
                         type: "failed",
-                        data: `❗ ${sender.address} FAILED VERIFYING TRANSACTION HASH`
+                        data: `${sender.address} FAILED VERIFYING TRANSACTION HASH`
                     })
                 }
 
                 parentPort.postMessage({
                     type: "success",
                     data: {
-                        address: signer.address,
-                        hash: receipt.hash
+                        address: signer.address
                     }
                 })
 
             } catch (error) {
-                console.log(timestamp(), chalk.redBright(`❗ ${signer.address} TRANSACTION REVERTED`))
+                skibidi.failed(`${signer.address} TRANSACTION REVERTED`)
                 parentPort.postMessage({
                     type: "error",
-                    data: chalk.redBright(error)
+                    data: error
                 })
             }
 
-            console.log(`${timestamp()} ${chalk.greenBright(`[+] ${signer.address} HAS COMPLETED LIQ CYCLE [${cycle}]`)}`)
-            await new Promise(resolve => setTimeout(resolve, 100000))
+            cycle++
+            if (cycle === maxCycle) {
+                break
+            } else {
+                skibidi.processing(`${sender.address} COMPLETED (${cycle}/${maxCycle}) CYCLE`)
+                await new Promise(resolve => setTimeout(resolve, 100000))
+            }
         }
 
-        console.log(`${timestamp()} ${chalk.greenBright(`✅ ${signer.address} FINISHED ${cycle} CYCLE OF ADDING LIQ`)} `)
+        skibidi.success(`${sender.address} HAS SUCCESSFULLY COMPLETED (${cycle}/${maxCycle}) CYCLE`)
         parentPort.postMessage({
             type: "done"
         })
@@ -520,33 +485,29 @@ class Transaction {
         try {
             const tx = await contract.mint(tokenArr.usdc, signer.address, amount)
             await tx.wait()
-
+            console.log(tx)
             const receipt = await this.check(tx.hash)
 
             if (receipt.status !== 1) {
                 parentPort.postMessage({
                     type: "failed",
-                    data: `❗ ${sender.address} FAILED VERIFYING TRANSACTION HASH`
+                    data: `${sender.address} FAILED VERIFYING TRANSACTION HASH`
                 })
             }
 
             parentPort.postMessage({
-                type: "success",
+                type: "done",
                 data: {
-                    address: signer.address,
-                    hash: receipt.hash
+                    address: signer.address
                 }
             })
         } catch (error) {
+            skibidi.failed(`${signer.address} TRANSACTION REVERTED`)
             parentPort.postMessage({
                 type: "error",
                 data: chalk.red(error)
             })
         }
-
-        parentPort.postMessage({
-            type: "done"
-        })
     }
 
     static async mintZenithUsdt() {
@@ -566,15 +527,14 @@ class Transaction {
             if (receipt.status !== 1) {
                 parentPort.postMessage({
                     type: "failed",
-                    data: `❗ ${sender.address} FAILED VERIFYING TRANSACTION HASH`
+                    data: `${sender.address} FAILED VERIFYING TRANSACTION HASH`
                 })
             }
 
             parentPort.postMessage({
-                type: "success",
+                type: "done",
                 data: {
-                    address: signer.address,
-                    hash: receipt.hash
+                    address: signer.address
                 }
             })
         } catch (error) {
@@ -583,10 +543,6 @@ class Transaction {
                 data: chalk.red(error)
             })
         }
-
-        parentPort.postMessage({
-            type: "done"
-        })
     }
 }
 

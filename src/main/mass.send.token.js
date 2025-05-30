@@ -1,56 +1,59 @@
 const Wallet = require("../utils/wallet.utils")
 const Proxy = require("../utils/proxy.utils")
-const { refferralCode } = require("../config/config")
+const { refferralCode, skibidi } = require("../config/config")
 const Workers = require("../worker/worker")
 
 async function start() {
     let maxWorker = 5
     try {
         console.clear()
-        const senderWalletArr = await Wallet.load()
+        const walletArr = await Wallet.load()
         const proxyArr = await Proxy.load()
 
-        if (senderWalletArr.length === 0) {
-            console.log("no private keys found")
+        if (walletArr.length === 0) {
+            skibidi.failed("NO PRIVATE KEY FOUND")
             process.exit(1)
         }
 
         if (proxyArr.length === 0) {
-            console.log("no proxy found. using current ip")
+            skibidi.warn("NO PROXY FOUND. USING CURRENT IP AND LIMITING WORKERS")
             maxWorker = 2
         }
+
+        skibidi.success(`[LOADED ${walletArr.length} WALLET]`)
+        skibidi.success(`[LOADED ${proxyArr.length} PROXY]`)
 
         const sendTask = []
         const authTask = []
         const authDataArr = []
 
-        for (let i = 0; i < senderWalletArr.length; i++) {
-            const proxy = proxyArr.length === 0 ? "" : proxyArr[i % proxyArr.length]
-            authTask.push(() => Workers.authWorker(senderWalletArr[i], refferralCode, proxy))
+        for (let i = 0; i < walletArr.length; i++) {
+            const proxy = await Proxy.get(proxyArr, i)
+            authTask.push(() => Workers.authWorker(walletArr[i], refferralCode, proxy))
         }
 
-        console.log("\n[STARTING LOGIN WORKER]")
+        skibidi.processing("[STARTING LOGIN WORKERS]")
         const authData = await Workers.startLimitedTask(authTask, maxWorker)
 
-        senderWalletArr.forEach((pk, index) => {
+        walletArr.forEach((pk, index) => {
             authDataArr.push({
                 address: authData[index].address,
                 token: authData[index].token
             })
         })
 
-        for (let j = 0; j < senderWalletArr.length; j++) {
-            const proxy = proxyArr.length === 0 ? "" : proxyArr[j % proxyArr.length]
-            sendTask.push(() => Workers.sendTokenWorker(senderWalletArr[j], proxy, authDataArr[j].token))
+        for (let j = 0; j < walletArr.length; j++) {
+            const proxy = await Proxy.get(proxyArr, j)
+            sendTask.push(() => Workers.sendTokenWorker(walletArr[j], proxy, authDataArr[j].token))
         }
 
-        console.log("\n[STARTING SEND TOKEN WORKERS]")
+        skibidi.processing("[STARTING SEND TOKEN WORKERS]")
         await Workers.startLimitedTask(sendTask, maxWorker)
-
-        console.log("\nDONE!")
     } catch (error) {
-        console.error(error)
+        skibidi.failed(error)
     }
+
+    skibidi.success("TASKS DONE")
 }
 
 start()

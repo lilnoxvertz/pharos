@@ -1,5 +1,5 @@
 const { HttpsProxyAgent } = require("https-proxy-agent")
-const { rateLimitConfig } = require("../../config/config")
+const { rateLimitConfig, skibidi } = require("../../config/config")
 const { workerData, parentPort } = require("worker_threads")
 const { ethers } = require("ethers")
 const chalk = require("chalk")
@@ -43,6 +43,13 @@ class Auth {
         let attempt = 0
         let maxAttempt = rateLimitConfig.maxAttempt
 
+        if (!success && attempt === maxAttempt) {
+            parentPort.postMessage({
+                type: "failed",
+                data: `${wallet.address} FAILED RETRIEVING AUTH TOKEN`
+            })
+        }
+
         while (!success && attempt < maxAttempt) {
             attempt++
             try {
@@ -57,7 +64,7 @@ class Auth {
                 const token = result?.data?.jwt
 
                 if (!token) {
-                    console.log(chalk.red(`${walletAddress} FAILED RETRIEVING TOKEN! RETRYING`))
+                    skibidi.failed(`${wallet.address} FAILED GETTING AUTH TOKEN. RETRYING (${attempt}/${maxAttempt})`)
                     await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }
@@ -77,6 +84,10 @@ class Auth {
                 })
             }
         }
+
+        parentPort.postMessage({
+            type: "done"
+        })
     }
 }
 

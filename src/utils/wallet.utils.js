@@ -1,20 +1,21 @@
 const { ethers } = require("ethers")
 const fs = require("fs")
+const { skibidi } = require("../config/config")
 
 class Wallet {
     static async generate(amount) {
         let i = 0
-        console.log(`generating ${amount} wallet`)
+        skibidi.processing(`GENERATING ${amount} WALLET`)
         while (i < amount) {
             const wallet = ethers.Wallet.createRandom()
             fs.appendFileSync("wallet.txt", `${wallet.privateKey},${wallet.address}\n`)
             i++
         }
 
-        console.log("done!")
+        skibidi.success(`DONE GENERATING WALLET`)
     }
 
-    static async load() {
+    static load() {
         return fs.readFileSync("wallet.txt", "utf-8")
             .split("\n")
             .filter(line => line.trim())

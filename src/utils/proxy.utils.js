@@ -1,7 +1,8 @@
 const fs = require("fs")
+const { skibidi } = require("../config/config")
 
 class Proxy {
-    static async load() {
+    static load() {
         return fs.readFileSync("proxy.txt", "utf-8")
             .split("\n")
             .filter(line => line.trim())
@@ -15,10 +16,15 @@ class Proxy {
                     const [ip, port] = parts
                     return `https://${ip}:${port}`
                 } else {
-                    console.log(`${parts} is an invalid proxy format!`)
-                    console.log("it should be either ip:port:username:password or ip:port")
+                    skibidi.failed(`${parts} IS A INVALID PROXY FORMAT!`)
+                    skibidi.failed("IT SHOULD BE EITHER IP:PORT:USERNAME:PASSWORD OR IP:PORT")
                 }
             })
+    }
+
+    static async get(array, index) {
+        const proxy = array.length === 0 ? "" : array[index % array.length]
+        return proxy
     }
 }
 
