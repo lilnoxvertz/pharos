@@ -37,7 +37,7 @@
    npm run faucet
    ```
 
-2. claiming zenith usdt and usdc
+2. claiming zenith usdt and usdc [PATCHED]
 
    ```bash
    npm run zenith
