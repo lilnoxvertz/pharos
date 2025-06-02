@@ -9,17 +9,6 @@ const { timestamp } = require("../../../utils/timestamp")
 const Token = require("./token")
 const Proxy = require("../../../utils/proxy.utils")
 
-const proxy = Proxy.load()
-const randomIndex = Math.floor(Math.random() * proxy.length)
-const agent = proxy ? new HttpsProxyAgent(proxy[randomIndex]) : undefined
-
-globalThis.fetch = (url, options = {}) => {
-    return fetch(url, {
-        ...options,
-        agent
-    })
-}
-
 const mintAbi = [{
     "name": "mint",
     "type": "function",
