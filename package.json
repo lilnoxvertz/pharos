@@ -7,14 +7,9 @@
   "type": "commonjs",
   "main": "main.js",
   "scripts": {
+    "start": "node ./src/main/main.js",
     "generate": "node ./src/main/generate.wallet.js",
-    "cekin": "node ./src/main/checkin.js",
-    "send": "node ./src/main/mass.send.token.js",
-    "faucet": "node ./src/main/get.faucet.js",
-    "zenith": "node ./src/main/get.zenith.faucet.js",
-    "swap": "node ./src/main/swap.token.js",
-    "liq": "node ./src/main/add.liquidity.js",
-    "point": "node ./src/main/get.points.js",
+    "data": "node ./src/main/get.data.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

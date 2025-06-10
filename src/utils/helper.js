@@ -22,7 +22,7 @@ class Proxy {
             })
     }
 
-    static get(array, index) {
+    static async get(array, index) {
         const proxy = array.length === 0 ? "" : array[index % array.length]
         return proxy
     }

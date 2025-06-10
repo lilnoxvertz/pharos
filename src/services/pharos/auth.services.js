@@ -1,14 +1,12 @@
 const { HttpsProxyAgent } = require("https-proxy-agent")
 const { rateLimitConfig, skibidi } = require("../../config/config")
-const { workerData, parentPort } = require("worker_threads")
 const { ethers } = require("ethers")
-const chalk = require("chalk")
+const { getSplittedAddress } = require("../../utils/splitAddress")
 
 class Auth {
-    static async login() {
-        const { privateKey, reffCode, proxy } = workerData
-
+    static async login(privateKey, reffCode, proxy) {
         const wallet = new ethers.Wallet(privateKey)
+        const address = getSplittedAddress(wallet.address)
         const signature = await wallet.signMessage("pharos")
 
         const url = `https://api.pharosnetwork.xyz/user/login?address=${wallet.address}&signature=${signature}&invite_code=${reffCode}`
@@ -44,10 +42,10 @@ class Auth {
         let maxAttempt = rateLimitConfig.maxAttempt
 
         if (!success && attempt === maxAttempt) {
-            parentPort.postMessage({
-                type: "failed",
-                data: `${wallet.address} FAILED RETRIEVING AUTH TOKEN`
-            })
+            skibidi.failed(`${address} REACHED MAX ATTEMPT AND FAILED RETURNING AUTH TOKEN`)
+            return {
+                status: false
+            }
         }
 
         while (!success && attempt < maxAttempt) {
@@ -64,30 +62,22 @@ class Auth {
                 const token = result?.data?.jwt
 
                 if (!token) {
-                    skibidi.failed(`${wallet.address} FAILED GETTING AUTH TOKEN. RETRYING (${attempt}/${maxAttempt})`)
+                    skibidi.failed(`${address} FAILED GETTING AUTH TOKEN. RETRYING (${attempt}/${maxAttempt})`)
                     await new Promise(resolve => setTimeout(resolve, 20000))
                     continue
                 }
 
                 success = true
-                parentPort.postMessage({
-                    type: "success",
-                    data: {
-                        address: wallet.address,
-                        token: token
-                    }
-                })
+                skibidi.success(`${address} SUCCESSFULLY RETRIEVED AUTH TOKEN`)
+                return {
+                    status: true,
+                    address: wallet.address,
+                    authToken: token
+                }
             } catch (error) {
-                parentPort.postMessage({
-                    type: "error",
-                    data: error
-                })
+                skibidi.failed(`${address} ERROR: ${error}`)
             }
         }
-
-        parentPort.postMessage({
-            type: "done"
-        })
     }
 }
 

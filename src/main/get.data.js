@@ -1,14 +1,15 @@
-const Wallet = require("../utils/wallet.utils")
-const Proxy = require("../utils/proxy.utils")
-const { refferralCode, skibidi } = require("../config/config")
-const Workers = require("../worker/worker")
+const { refferralCode, skibidi } = require("../config/config");
+const Auth = require("../services/pharos/auth.services");
+const Proxy = require("../utils/proxy.utils");
+const Wallet = require("../utils/wallet.utils");
+const Workers = require("../worker/worker");
 
 async function start() {
-    let maxWorker = 5
+    let maxWorker = 10
     try {
         console.clear()
-        const walletArr = await Wallet.load()
-        const proxyArr = await Proxy.load()
+        const walletArr = Wallet.load()
+        const proxyArr = Proxy.load()
 
         if (walletArr.length === 0) {
             skibidi.failed("NO PRIVATE KEY FOUND")
@@ -23,13 +24,13 @@ async function start() {
         skibidi.success(`[LOADED ${walletArr.length} WALLET]`)
         skibidi.success(`[LOADED ${proxyArr.length} PROXY]`)
 
-        const sendTask = []
+        const pointTask = []
         const authTask = []
         const authDataArr = []
 
         for (let i = 0; i < walletArr.length; i++) {
             const proxy = await Proxy.get(proxyArr, i)
-            authTask.push(() => Workers.authWorker(walletArr[i], refferralCode, proxy))
+            authTask.push(() => Auth.login(walletArr[i], refferralCode, proxy))
         }
 
         skibidi.processing("[STARTING LOGIN WORKERS]")
@@ -38,17 +39,17 @@ async function start() {
         walletArr.forEach((pk, index) => {
             authDataArr.push({
                 address: authData[index].address,
-                token: authData[index].token
+                token: authData[index].authToken
             })
         })
 
         for (let j = 0; j < walletArr.length; j++) {
             const proxy = await Proxy.get(proxyArr, j)
-            sendTask.push(() => Workers.sendTokenWorker(walletArr[j], proxy, authDataArr[j].token))
+            pointTask.push(() => Workers.pointsWorker(authDataArr[j].address, authDataArr[j].token, proxy))
         }
 
-        skibidi.processing("[STARTING SEND TOKEN WORKERS]")
-        await Workers.startLimitedTask(sendTask, maxWorker)
+        skibidi.processing("[STARTING POINT WORKERS]")
+        await Workers.startLimitedTask(pointTask, maxWorker)
     } catch (error) {
         skibidi.failed(error)
     }

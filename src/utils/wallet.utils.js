@@ -22,25 +22,11 @@ class Wallet {
             .map(line => line.trim().split(",")[0])
     }
 
-    static async loadTreasuryWallet() {
-        return fs.readFileSync("treasuryWallet.txt", "utf-8")
-            .split("\n")
-            .filter(line => line.trim())
-            .map(line => line.trim().split(",")[0])
-    }
-
-    static async loadRecipientAddress() {
+    static loadRecipientAddress() {
         return fs.readFileSync("recipient.txt", "utf-8")
             .split("\n")
             .filter(line => line.trim())
             .map(line => line.trim().split(",")[0])
-    }
-
-    static async loadUserAddress() {
-        return fs.readFileSync("wallet.txt", "utf-8")
-            .split("\n")
-            .filter(line => line.trim())
-            .map(line => line.split(",")[1])
     }
 }
 

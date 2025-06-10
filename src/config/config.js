@@ -1,5 +1,4 @@
 const { JsonRpcProvider } = require("ethers")
-const { ethers } = require("ethers")
 const { timestamp } = require("../utils/timestamp")
 const chalk = require("chalk")
 
@@ -24,7 +23,7 @@ const rateLimitConfig = {
     maxAttempt: 3
 }
 
-const maxCycleConfig = 10 // change this line
+const maxSuccessTransaction = 10 // change this line
 
 const pharos = {
     rpc: new JsonRpcProvider("https://testnet.dplabs-internal.com"),
@@ -63,4 +62,4 @@ const authHeader = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0'
 }
 
-module.exports = { refferralCode, rateLimitConfig, pharos, authHeader, routerAddress, tokenArr, zenith, maxCycleConfig, skibidi }
+module.exports = { refferralCode, rateLimitConfig, pharos, authHeader, routerAddress, tokenArr, zenith, maxSuccessTransaction, skibidi }
