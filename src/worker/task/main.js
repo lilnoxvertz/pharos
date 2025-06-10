@@ -46,7 +46,8 @@ async function main() {
         "checkin",
         "faucet",
         "send",
-        "swap"
+        "swap",
+        "liq"
     ]
 
     const getToken = async () => {
