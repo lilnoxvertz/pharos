@@ -38,45 +38,6 @@
    npm run generate
    ```
 
-- CHECK-IN
-
-  ```bash
-  npm run cekin
-  ```
-
-- CLAIMING FAUCET
-
-1.  claiming pharos faucet (u needed to connect ur X account for it to be successs)
-
-```bash
-npm run faucet
-```
-
-2. claiming zenith usdt and usdc [PATCHED]
-
-   ```bash
-   npm run zenith
-   ```
-
-- SENDING TOKEN TO WALLET
-
-  ```bash
-  npm run send
-  ```
-
-- SWAPPING
-  ```bash
-  npm run swap
-  ```
-- ADDING LIQUIDITY
-  ```bash
-  npm run liq
-  ```
-- SHOWING POINTS
-  ```bash
-  npm run point
-  ```
-
 ## NOTE
 
 for referral, go to config.js and change the referralCode with yours
