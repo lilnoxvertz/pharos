@@ -77,7 +77,7 @@ async function main() {
     while (true) {
         skibidi.processing(`${address} IS CHOOSING A TASK..`)
         const randomTaskIndex = getRandomIndex(taskList.length)
-        let currentTask = "liq"//taskList[randomTaskIndex]
+        let currentTask = taskList[randomTaskIndex]
 
         skibidi.warn(`${address} IS WORKING ON ${currentTask.toUpperCase()} TASK`)
 
