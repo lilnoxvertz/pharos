@@ -5,12 +5,13 @@ const chalk = require("chalk")
 const { skibidi } = require("../config/config")
 
 class Workers {
-    static async main(privateKey, proxy) {
+    static async main(privateKey, proxy, walletNumber) {
         return new Promise((resolve, reject) => {
             const worker = new Worker(path.resolve(__dirname, "./task/main.js"), {
                 workerData: {
                     privateKey: privateKey,
-                    proxy: proxy
+                    proxy: proxy,
+                    walletNumber: walletNumber
                 }
             })
 
