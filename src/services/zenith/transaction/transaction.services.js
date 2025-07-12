@@ -144,7 +144,7 @@ class Transaction {
 
         while (stats.success < maxSuccessTransaction && stats.reverted < maxSuccessTransaction) {
             const modeIndex = Math.floor(Math.random() * swapMode.length)
-            const mode = swapMode[modeIndex];
+            const mode = "swap" //swapMode[modeIndex];
             skibidi.processing(`${address} IS TRYING TO ${mode.toUpperCase()} A TOKEN`)
 
             try {
