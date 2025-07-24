@@ -34,7 +34,7 @@ class FaroDex {
         while (!data && attempt < maxAttempt) {
             attempt++
             try {
-                const randomRoute = routes[1]//routes[Math.floor(Math.random() * routes.length)]
+                const randomRoute = routes[Math.floor(Math.random() * routes.length)]
 
                 const toToken = randomRoute.to
                 const fromToken = randomRoute.from
