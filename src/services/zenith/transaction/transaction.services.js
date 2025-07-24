@@ -1,10 +1,11 @@
-const { ethers, hexlify } = require("ethers")
+const { ethers, hexlify, parseEther } = require("ethers")
 const { pharos, routerAddress, tokenArr, zenith, skibidi, maxSuccessTransaction } = require("../../../config/config")
 const PharosClient = require("../../pharos/pharos.services")
 const { HttpsProxyAgent } = require("https-proxy-agent")
 const Wallet = require("../../../utils/wallet.utils")
 const Token = require("./token")
 const { getSplittedAddress } = require("../../../utils/splitAddress")
+const { Contract } = require("ethers")
 
 class Transaction {
     static encodeMultiCallData(pair, amount, walletAddress) {
@@ -40,26 +41,26 @@ class Transaction {
     static async sendToken(wallet, proxy, token) {
         const recipients = Wallet.loadRecipientAddress()
         if (recipients.length === 0) {
-            skibidi.failed("No recipient addresses found in recipient.txt. Skipping send task.")
-            return { success: 0, reverted: 0 };
+            skibidi.failed("[ZENITH] No recipient addresses found in recipient.txt. Skipping send task.")
+            return { success: 0, reverted: 0 }
         }
 
         const agent = proxy ? new HttpsProxyAgent(proxy) : undefined
         const sender = new ethers.Wallet(wallet, pharos.rpc)
         const address = getSplittedAddress(sender.address)
 
-        const balance = await pharos.rpc.getBalance(sender.address);
-        const minBalance = ethers.parseEther("0.0002");
+        const balance = await pharos.rpc.getBalance(sender.address)
+        const minBalance = ethers.parseEther("0.0002")
         if (balance < minBalance) {
-            skibidi.warn(`${address} balance is too low for sending. Skipping send task.`);
-            return { success: 0, reverted: 0 };
+            skibidi.warn(`[ZENITH] ${address} balance is too low for sending. Skipping send task.`)
+            return { success: 0, reverted: 0 }
         }
 
-        const amountToSend = (balance * 1n) / 1000n;
+        const amountToSend = (balance * 1n) / 1000n
 
         if (amountToSend === 0n) {
-            skibidi.warn(`${address} 0.1% of balance is too small to send. Skipping send task.`);
-            return { success: 0, reverted: 0 };
+            skibidi.warn(`[ZENITH] ${address} 0.1% of balance is too small to send. Skipping send task.`)
+            return { success: 0, reverted: 0 }
         }
 
         const stats = {
@@ -73,7 +74,7 @@ class Transaction {
             const sr = getSplittedAddress(recipient)
 
             try {
-                skibidi.processing(`${address} IS SENDING ${ethers.formatEther(amountToSend)} PHRS TO ${sr}`)
+                skibidi.processing(`[ZENITH] ${address} IS SENDING ${ethers.formatEther(amountToSend)} PHRS TO ${sr}`)
                 const tx = await sender.sendTransaction({
                     to: recipient,
                     value: amountToSend
@@ -84,10 +85,10 @@ class Transaction {
                 const txStatus = await this.check(tx.hash, agent)
 
                 if (txStatus.status !== 1) {
-                    throw new Error(`${address} FAILED VERIFYING HASH`)
+                    throw new Error(`[ZENITH] ${address} FAILED VERIFYING HASH`)
                 }
 
-                skibidi.success(`${address} SUCCESSFULLY SENT ${ethers.formatEther(amountToSend)} PHRS TO ${sr}. REPORTING`)
+                skibidi.success(`[ZENITH] ${address} SUCCESSFULLY SENT ${ethers.formatEther(amountToSend)} PHRS TO ${sr}. REPORTING`)
                 stats.success++
 
                 const report = await PharosClient.reportSendTokenTask(sender.address, token, tx.hash, agent)
@@ -96,16 +97,16 @@ class Transaction {
                     throw new Error(`${address} SUCCESSFULLY SENT TOKEN BUT FAILED TO REPORT IT.`)
                 }
             } catch (error) {
-                skibidi.failed(`${address} ERROR: ${error.message}`)
+                skibidi.failed(`[ZENITH] ${address} ERROR: ${error.message}`)
                 stats.reverted++
             }
 
             if (stats.success < maxSuccessTransaction) {
-                await new Promise(resolve => setTimeout(resolve, 20000))
+                await new Promise(resolve => setTimeout(resolve, 30000))
             }
         }
 
-        skibidi.success(`${address} HAS SUCCESSFULLY COMPLETED (${stats.success}/${maxSuccessTransaction}) SEND TRANSACTIONS`)
+        skibidi.success(`[ZENITH] ${address} HAS SUCCESSFULLY COMPLETED (${stats.success}/${maxSuccessTransaction}) SEND TRANSACTIONS`)
         return {
             success: stats.success,
             reverted: stats.reverted
@@ -138,41 +139,70 @@ class Transaction {
             "function exactInputSingle(tuple(address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) params) payable returns (uint256 amountOut)"
         ]
 
-        const swapMode = ["swap", "deposit"]
-        const tokens = [tokenArr.usdc, tokenArr.usdt, tokenArr.wPHRS]
-        const stats = { success: 0, reverted: 0 }
+        const swapMode = [
+            "swap",
+            "deposit"
+        ]
+
+        const tokens = [
+            tokenArr.usdc,
+            tokenArr.usdt,
+            tokenArr.nUsdc,
+            tokenArr.nUsdt
+        ]
+
+        const stats = {
+            success: 0,
+            reverted: 0
+        }
 
         while (stats.success < maxSuccessTransaction && stats.reverted < maxSuccessTransaction) {
             const modeIndex = Math.floor(Math.random() * swapMode.length)
-            const mode = swapMode[modeIndex];
-            skibidi.processing(`${address} IS TRYING TO ${mode.toUpperCase()} A TOKEN`)
+            const mode = "swap" //swapMode[modeIndex]
+            skibidi.processing(`[ZENITH] ${address} IS TRYING TO ${mode.toUpperCase()} A TOKEN`)
 
             try {
                 switch (mode) {
                     case "swap":
                         const randomTokenIndex = Math.floor(Math.random() * tokens.length)
-                        let tokenInAddress = tokens[randomTokenIndex]
+
+                        let tokenInAddress = tokens[Math.floor(Math.random() * tokens.length)]
                         let tokenOutAddress = tokens[Math.floor(Math.random() * tokens.length)]
+
                         if (tokenInAddress === tokenOutAddress) {
-                            tokenOutAddress = tokens[(randomTokenIndex + 1) % tokens.length];
+                            tokenOutAddress = tokens[(randomTokenIndex + 1) % tokens.length]
                         }
 
-                        const tokenInContract = new ethers.Contract(tokenInAddress, erc20Abi, sender)
-                        const tokenInBalance = await tokenInContract.balanceOf(sender.address)
+                        const tokenInContract = new Contract(tokenInAddress, erc20Abi, sender)
+                        let tokenInBalance = await tokenInContract.balanceOf(sender.address)
 
                         if (tokenInBalance === 0n) {
-                            skibidi.warn(`${address} has no balance of the selected token to swap. Skipping attempt.`)
-                            continue;
+                            skibidi.warn(`[ZENITH] ${address} has no balance of the selected token to swap. using PHRS > USDT/USDC.`)
+                            const fallbackToken = [
+                                tokenArr.nUsdc,
+                                tokenArr.nUsdt,
+                                tokenArr.usdc,
+                                tokenArr.usdt
+                            ]
+
+                            tokenInAddress = tokenArr.PHRS
+                            tokenOutAddress = fallbackToken[Math.floor(Math.random() * fallbackToken.length)]
                         }
 
-                        const amountToSwap = (tokenInBalance * 1n) / 100n;
+                        const amountToSwap = (tokenInBalance * 1n) / 10000n
 
                         if (amountToSwap === 0n) {
-                            skibidi.warn(`${address} 1% of token balance is too small to swap. Skipping.`)
-                            continue;
+                            skibidi.warn(`[ZENITH] ${address} 1% of token balance is too small to swap.`)
+                            if (tokenInAddress === tokenArr.PHRS) {
+                                skibidi.warn(`[ZENITH] ${address} depositing phrs token..`)
+                                const amountToDeposit = parseEther("0.01")
+                                this.deposit(tokenInContract, amountToDeposit)
+                            }
+                            continue
                         }
 
                         const allowance = await tokenInContract.allowance(sender.address, routerAddress)
+
                         if (allowance < amountToSwap) {
                             const approveTx = await tokenInContract.approve(routerAddress, amountToSwap)
                             await approveTx.wait()
@@ -180,7 +210,8 @@ class Transaction {
 
                         const exactInputSingleInterface = new ethers.Interface(exactInputSingle)
                         const multicallInterface = new ethers.Interface(multicallAbi)
-                        const deadline = Math.floor(Date.now() / 1000) + 15 * 60;
+                        const deadline = Math.floor(Date.now() / 1000) + 15 * 60
+
                         const exactInputSingleParams = {
                             tokenIn: tokenInAddress,
                             tokenOut: tokenOutAddress,
@@ -190,32 +221,39 @@ class Transaction {
                             amountOutMinimum: 0n,
                             sqrtPriceLimitX96: 0n
                         }
+
                         const param1 = exactInputSingleInterface.encodeFunctionData("exactInputSingle", [exactInputSingleParams])
                         const data = [param1]
                         const multicall = multicallInterface.encodeFunctionData("multicall", [deadline, data])
-                        const tx = await sender.sendTransaction({ to: routerAddress, data: multicall, gasLimit: 300000 })
+
+                        const tx = await sender.sendTransaction({
+                            to: routerAddress,
+                            data: multicall,
+                            gasLimit: 300000
+                        })
+
                         await tx.wait()
 
                         const receipt = await this.check(tx.hash)
                         if (receipt.status !== 1) {
-                            throw new Error("Swap transaction failed to confirm or reverted.")
+                            throw new Error("[ZENITH] Swap transaction failed to confirm or reverted.")
                         }
 
                         stats.success++
-                        skibidi.success(`${address} SUCCESSFULLY SWAPPED A TOKEN`)
+                        skibidi.success(`[ZENITH] ${address} SUCCESSFULLY SWAPPED A TOKEN`)
                         break
 
                     case "deposit":
                         const ethBalance = await pharos.rpc.getBalance(sender.address)
                         if (ethBalance < ethers.parseEther("0.0001")) {
-                            skibidi.warn(`${address} has insufficient ETH to wrap. Skipping deposit attempt.`)
-                            continue;
+                            skibidi.warn(`[ZENITH] ${address} has insufficient ETH to wrap. Skipping deposit attempt.`)
+                            continue
                         }
 
-                        const amountToDeposit = (ethBalance * 1n) / 100n;
+                        const amountToDeposit = (ethBalance * 1n) / 100n
                         if (amountToDeposit === 0n) {
-                            skibidi.warn(`${address} 1% of ETH balance is too small to wrap. Skipping.`)
-                            continue;
+                            skibidi.warn(`[ZENITH] ${address} 1% of ETH balance is too small to wrap. Skipping.`)
+                            continue
                         }
 
                         const pharosContract = new ethers.Contract(pharos.contractAddress, erc20Abi, sender)
@@ -224,24 +262,24 @@ class Transaction {
 
                         const depositReceipt = await this.check(depositTx.hash)
                         if (depositReceipt.status !== 1) {
-                            throw new Error("Deposit (wrap) transaction failed to confirm or reverted.")
+                            throw new Error("[ZENITH] Deposit (wrap) transaction failed to confirm or reverted.")
                         }
                         stats.success++
-                        skibidi.success(`${address} SUCCESSFULLY SWAPPED A TOKEN (WRAPPED ETH)`)
+                        skibidi.success(`[ZENITH] ${address} SUCCESSFULLY SWAPPED A TOKEN (WRAPPED ETH)`)
                         break
                 }
             } catch (error) {
-                skibidi.failed(`${address} TRANSACTION FAILED: ${error.message}`)
+                skibidi.failed(`[ZENITH] ${address} TRANSACTION FAILED: ${error}`)
                 stats.reverted++
             }
 
             if (stats.success < maxSuccessTransaction) {
                 skibidi.processing(`${address} COMPLETED (${stats.success}/${maxSuccessTransaction}) SWAP TRANSACTION. Waiting...`)
-                await new Promise(resolve => setTimeout(resolve, 20000))
+                await new Promise(resolve => setTimeout(resolve, 30000))
             }
         }
 
-        skibidi.success(`${address} HAS SUCCESSFULLY COMPLETED (${stats.success}/${maxSuccessTransaction}) SWAP TASK`)
+        skibidi.success(`[ZENITH] ${address} HAS SUCCESSFULLY COMPLETED (${stats.success}/${maxSuccessTransaction}) SWAP TASK`)
         return { success: stats.success, reverted: stats.reverted }
     }
 
@@ -258,58 +296,77 @@ class Transaction {
         ]
 
         const pair = [
-            { from: tokenArr.wPHRS, to: tokenArr.usdc, fee: 3000 },
-            { from: tokenArr.usdc, to: tokenArr.wPHRS, fee: 3000 },
-            { from: tokenArr.wPHRS, to: tokenArr.usdt, fee: 3000 },
-            { from: tokenArr.usdt, to: tokenArr.wPHRS, fee: 3000 }
+            {
+                from: tokenArr.wPHRS,
+                to: tokenArr.usdc,
+                fee: 3000
+            },
+            {
+                from: tokenArr.usdc,
+                to: tokenArr.wPHRS,
+                fee: 3000
+            },
+            {
+                from: tokenArr.wPHRS,
+                to: tokenArr.usdt,
+                fee: 3000
+            },
+            {
+                from: tokenArr.usdt,
+                to: tokenArr.wPHRS,
+                fee: 3000
+            }
         ]
 
-        const stats = { success: 0, reverted: 0 }
+        const stats = {
+            success: 0,
+            reverted: 0
+        }
 
         while (stats.success < maxSuccessTransaction && stats.reverted < maxSuccessTransaction) {
-            skibidi.processing(`${address} IS TRYING TO ADD LIQUIDITY..`)
+            skibidi.processing(`[ZENITH] ${address} IS TRYING TO ADD LIQUIDITY..`)
             try {
                 const randomPairIndex = Math.floor(Math.random() * pair.length)
-                const randomPair = pair[randomPairIndex];
+                const randomPair = pair[randomPairIndex]
 
 
-                const tokens = [randomPair.from, randomPair.to].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1);
-                const token0Address = tokens[0];
-                const token1Address = tokens[1];
+                const tokens = [randomPair.from, randomPair.to].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
+                const token0Address = tokens[0]
+                const token1Address = tokens[1]
 
-                const token0Contract = new Token(token0Address, wallet);
-                const token1Contract = new Token(token1Address, wallet);
+                const token0Contract = new Token(token0Address, wallet)
+                const token1Contract = new Token(token1Address, wallet)
 
-                const balance0 = await token0Contract.balanceOf(signer.address);
-                const balance1 = await token1Contract.balanceOf(signer.address);
+                const balance0 = await token0Contract.balanceOf(signer.address)
+                const balance1 = await token1Contract.balanceOf(signer.address)
 
-                let amount0Desired = (balance0 * 1n) / 1000n;
-                let amount1Desired = (balance1 * 1n) / 1000n;
+                let amount0Desired = (balance0 * 1n) / 1000n
+                let amount1Desired = (balance1 * 1n) / 1000n
 
                 if (token0Address !== randomPair.from) {
-                    [amount0Desired, amount1Desired] = [amount1Desired, amount0Desired];
+                    [amount0Desired, amount1Desired] = [amount1Desired, amount0Desired]
                 }
 
                 if (amount0Desired === 0n || amount1Desired === 0n) {
-                    skibidi.warn(`${address} INSUFFICIENT BALANCE FOR LIQUIDITY PAIR. SKIPPING.`);
-                    stats.reverted++;
-                    continue;
+                    skibidi.warn(`[ZENITH] ${address} INSUFFICIENT BALANCE FOR LIQUIDITY PAIR. SKIPPING.`)
+                    stats.reverted++
+                    continue
                 }
 
-                skibidi.processing(`${address} Approving ${ethers.formatUnits(amount0Desired, await token0Contract.decimals())} and ${ethers.formatUnits(amount1Desired, await token1Contract.decimals())}`);
+                skibidi.processing(`[ZENITH] ${address} APPROVING TOKEN`)
 
-                await token0Contract.approve(zenith.liqContract, amount0Desired);
-                await token1Contract.approve(zenith.liqContract, amount1Desired);
+                await token0Contract.approve(zenith.liqContract, amount0Desired)
+                await token1Contract.approve(zenith.liqContract, amount1Desired)
 
                 const d = Math.floor(Date.now() / 1000) + 1200
 
                 const mintInterface = new ethers.Interface(mintAbi)
                 const multicallInterface = new ethers.Interface(multicallAbi)
 
-                const fee = 3000;
-                const tickSpacing = 60;
-                const minTick = -887220;
-                const maxTick = 887220;
+                const fee = 3000
+                const tickSpacing = 60
+                const minTick = -887220
+                const maxTick = 887220
 
                 const params = {
                     token0: token0Address,
@@ -341,23 +398,23 @@ class Transaction {
 
                 if (receipt.status === 1) {
                     stats.success++
-                    skibidi.success(`${address} SUCCESSFULLY ADDED LIQUIDITY`)
+                    skibidi.success(`[ZENITH] ${address} SUCCESSFULLY ADDED LIQUIDITY`)
                 } else {
-                    skibidi.failed(`${address} FAILED VERIFYING TRANSACTION HASH`)
+                    skibidi.failed(`[ZENITH] ${address} FAILED VERIFYING TRANSACTION HASH`)
                 }
 
             } catch (error) {
-                skibidi.failed(`${address} TRANSACTION REVERTED: ${error.message}`)
+                skibidi.failed(`[ZENITH] ${address} TRANSACTION REVERTED: ${error.message}`)
                 stats.reverted++
             }
 
             if (stats.success < maxSuccessTransaction) {
-                skibidi.processing(`${address} COMPLETED (${stats.success}/${maxSuccessTransaction}) TRANSACTION`)
-                await new Promise(resolve => setTimeout(resolve, 20000))
+                skibidi.processing(`[ZENITH] ${address} COMPLETED (${stats.success}/${maxSuccessTransaction}) TRANSACTION`)
+                await new Promise(resolve => setTimeout(resolve, 30000))
             }
         }
 
-        skibidi.success(`${address} HAS SUCCESSFULLY COMPLETED (${stats.success}/${maxSuccessTransaction}) TRANSACTION`)
+        skibidi.success(`[ZENITH] ${address} HAS SUCCESSFULLY COMPLETED (${stats.success}/${maxSuccessTransaction}) TRANSACTION`)
         return {
             success: stats.success,
             reverted: stats.reverted

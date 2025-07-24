@@ -5,7 +5,7 @@ const Workers = require("../worker/worker")
 
 async function main() {
     while (true) {
-        let maxWorker = 30
+        let maxWorker = 10
         console.clear()
         try {
             const wallets = Wallet.load()
@@ -31,7 +31,6 @@ async function main() {
             }
 
             await Workers.startLimitedTask(mainTask, maxWorker)
-
             skibidi.success("ALL WALLETS HAVE COMPLETED A FULL CYCLE.")
             skibidi.processing("RESTARTING THE ENTIRE PROCESS IN 1 HOUR...")
             await new Promise(resolve => setTimeout(resolve, 3600000))

@@ -3,44 +3,14 @@ const { workerData, parentPort } = require("worker_threads")
 const { pharos, skibidi, refferralCode } = require("../../config/config")
 const { getRandomIndex } = require("../../utils/randomIndex")
 const { getSplittedAddress } = require("../../utils/splitAddress")
-const { HttpsProxyAgent } = require("https-proxy-agent")
 const Auth = require("../../services/pharos/auth.services")
 const PharosClient = require("../../services/pharos/pharos.services")
 const Transaction = require("../../services/zenith/transaction/transaction.services")
+const FaroDex = require("../../services/faroswap/transaction/transaction")
 
 async function main() {
     const { privateKey, proxy } = workerData
     const wallet = new ethers.Wallet(privateKey, pharos.rpc)
-
-    const walletStats = {
-        address: wallet.address,
-        token: "",
-        task: {
-            checkin: {
-                isCheckIn: false
-            },
-            faucet: {
-                isClaimed: false
-            },
-            send: {
-                success: 0,
-                reverted: 0,
-                isDone: false
-            },
-            swap: {
-                success: 0,
-                reverted: 0,
-                isDone: false
-            },
-            liq: {
-                success: 0,
-                failed: 0,
-                isDone: false
-            }
-        },
-        totalTaskCompleted: 0,
-        totalAddressTx: 0
-    }
 
     const taskList = [
         "checkin",
@@ -50,12 +20,18 @@ async function main() {
         "liq"
     ]
 
+    const dex = [
+        "zenith",
+        "faroswap"
+    ]
+
+    const address = getSplittedAddress(wallet.address)
     const getToken = async () => {
-        let token = false
+        let tokenFound = false
         let attempt = 0
         const maxAttempt = 3
 
-        while (!token && attempt < maxAttempt) {
+        while (!tokenFound && attempt < maxAttempt) {
             const auth = await Auth.login(wallet.privateKey, refferralCode, proxy)
 
             if (!auth.authToken) {
@@ -64,45 +40,36 @@ async function main() {
                 continue
             }
 
-            token = true
-            walletStats.token = auth.authToken
-            break
+            tokenFound = true
+            return auth.authToken
         }
 
-        return
+        skibidi.failed(`${address} Failed retrieving auth token`)
     }
 
-    const address = getSplittedAddress(wallet.address)
+    const token = await getToken()
 
     while (true) {
         skibidi.processing(`${address} IS CHOOSING A TASK..`)
-        const randomTaskIndex = getRandomIndex(taskList.length)
-        let currentTask = "liq"//taskList[randomTaskIndex]
+        let currentTask = taskList.shift()
 
         skibidi.warn(`${address} IS WORKING ON ${currentTask.toUpperCase()} TASK`)
 
         switch (currentTask) {
             case "checkin":
                 try {
-                    if (walletStats.token === "") {
-                        skibidi.warn(`${address} NO AUTH TOKEN FOUND! TRYING TO GET THE TOKEN`)
-                        await getToken()
-                    }
-
-                    const checkin = await PharosClient.checkIn(walletStats.token, wallet.address, proxy)
+                    const checkin = await PharosClient.checkIn(token, wallet.address, proxy)
 
                     if (!checkin.status) {
                         skibidi.failed(checkin.msg)
                         parentPort.postMessage({
                             type: "failed"
                         })
+                        break
                     }
 
                     skibidi.warn(`${address} SUCCESSFULLY COMPLETED ${currentTask.toUpperCase()} TASK!`)
-                    walletStats.task.checkin.isCheckIn = true
 
-                    skibidi.warn(`${address} REMOVING CHECK IN TASK IN ORDER TO CONTINUE INFINITE LOOPS`)
-                    taskList.splice(currentTask, 1)
                     parentPort.postMessage({
                         type: "success"
                     })
@@ -117,21 +84,14 @@ async function main() {
 
             case "faucet":
                 try {
-                    if (walletStats.token === "") {
-                        skibidi.warn(`${address} NO AUTH TOKEN FOUND! TRYING TO GET THE TOKEN`)
-                        await getToken()
-                    }
-
-                    const isClaimable = await PharosClient.getFaucetStatus(wallet.address, walletStats.token, proxy)
+                    const isClaimable = await PharosClient.getFaucetStatus(wallet.address, token, proxy)
 
                     if (!isClaimable) {
                         skibidi.failed(`${address} ALREADY CLAIMED PHRS FAUCET TODAY`)
-                        skibidi.warn(`${address} REMOVING FAUCET TASK IN ORDER TO CONTINUE INFINITE LOOPS`)
-                        taskList.splice(currentTask, 1)
                         break
                     }
 
-                    const faucet = await PharosClient.getFaucet(wallet.address, walletStats.token, proxy)
+                    const faucet = await PharosClient.getFaucet(wallet.address, token, proxy)
 
                     if (!faucet.status) {
                         skibidi.failed(faucet.msg)
@@ -141,10 +101,6 @@ async function main() {
                     }
 
                     skibidi.warn(`${address} SUCCESSFULLY COMPLETED ${currentTask.toUpperCase()} TASK!`)
-                    walletStats.task.faucet.isClaimed = true
-
-                    skibidi.warn(`${address} REMOVING FAUCET TASK IN ORDER TO CONTINUE INFINITE LOOPS`)
-                    taskList.splice(currentTask, 1)
                     parentPort.postMessage({
                         type: "success"
                     })
@@ -159,20 +115,14 @@ async function main() {
 
             case "send":
                 try {
-                    if (walletStats.token === "") {
+                    if (token === "") {
                         skibidi.warn(`${address} NO AUTH TOKEN FOUND! TRYING TO GET THE TOKEN`)
                         await getToken()
                     }
 
-                    const send = await Transaction.sendToken(wallet.privateKey, proxy, walletStats.token)
-
-                    walletStats.task.send.success = send.success
-                    walletStats.task.send.reverted = send.reverted
+                    await Transaction.sendToken(wallet.privateKey, proxy, token)
 
                     skibidi.warn(`${address} SUCCESSFULLY COMPLETED ${currentTask.toUpperCase()} TASK!`)
-                    walletStats.task.send.success = send.success
-                    walletStats.task.send.reverted = send.reverted
-                    walletStats.task.send.isDone = true
 
                     parentPort.postMessage({
                         type: "success"
@@ -188,15 +138,15 @@ async function main() {
 
             case "swap":
                 try {
-                    const swap = await Transaction.swapToken(wallet.privateKey)
+                    const randomDex = dex[Math.floor(Math.random() * dex.length)]
 
-                    walletStats.task.swap.success = swap.success
-                    walletStats.task.swap.reverted = swap.reverted
+                    if (randomDex === "zenith") {
+                        await Transaction.swapToken(wallet.privateKey)
+                    } else if (randomDex === "faroswap") {
+                        await FaroDex.swapToken(wallet.privateKey, proxy)
+                    }
 
-                    skibidi.warn(`${address} SUCCESSFULLY COMPLETED ${currentTask.toUpperCase()} TASK!`)
-                    walletStats.task.swap.success = swap.success
-                    walletStats.task.swap.reverted = swap.reverted
-                    walletStats.task.swap.isDone = true
+                    skibidi.warn(`${address} SUCCESSFULLY COMPLETED ${currentTask.toUpperCase()} TASK ON ${randomDex}!`)
 
                     parentPort.postMessage({
                         type: "success"
@@ -212,15 +162,15 @@ async function main() {
 
             case "liq":
                 try {
-                    const liq = await Transaction.addLiquidity(wallet.privateKey)
+                    const randomDex = dex[Math.floor(Math.random() * dex.length)]
 
-                    walletStats.task.liq.success = liq.success
-                    walletStats.task.liq.reverted = liq.reverted
+                    if (randomDex === "zenith") {
+                        await Transaction.addLiquidity(wallet.privateKey)
+                    } else if (randomDex === "faroswap") {
+                        await FaroDex.addLiquidity(wallet.privateKey)
+                    }
 
-                    skibidi.warn(`${address} SUCCESSFULLY COMPLETED ${completedTask.length} TASK! COMPLETING REMAINING ${taskList.length}  TASK`)
-                    walletStats.task.liq.success = liq.success
-                    walletStats.task.liq.reverted = liq.reverted
-                    walletStats.task.liq.isDone = true
+                    skibidi.warn(`${address} SUCCESSFULLY COMPLETED ${currentTask.toUpperCase()} TASK ON ${randomDex}!`)
 
                     parentPort.postMessage({
                         type: "success"
@@ -235,10 +185,14 @@ async function main() {
                 break
         }
 
-        const delay = Math.floor(Math.random() * (30000 + 20000 - 1)) + 20000
-        const second = Math.floor(delay / 1000)
-        skibidi.warn(`${address} WAITING ${second} SECOND BEFORE REPEATING PROCESS`)
-        await new Promise(r => setTimeout(r, delay))
+        if (taskList.length === 0) {
+            break
+        } else {
+            const delay = Math.floor(Math.random() * (10000 + 5000 - 1)) + 7000
+            const second = Math.floor(delay / 1000)
+            skibidi.warn(`${address} WAITING ${second} SECOND BEFORE REPEATING PROCESS`)
+            await new Promise(r => setTimeout(r, delay))
+        }
     }
 
     parentPort.postMessage({

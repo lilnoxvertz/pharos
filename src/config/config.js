@@ -23,15 +23,22 @@ const rateLimitConfig = {
     maxAttempt: 3
 }
 
-const maxSuccessTransaction = 10 // change this line
+const maxSuccessTransaction = 3 // change this line
 
 const pharos = {
     rpc: new JsonRpcProvider("https://testnet.dplabs-internal.com"),
-    contractAddress: "0x76aaada469d23216be5f7c596fa25f282ff9b364"
+    contractAddress: "0x76aaada469d23216be5f7c596fa25f282ff9b364",
+    pnsContract: "0x51be1ef20a1fd5179419738fc71d95a8b6f8a175"
 }
 
 const zenith = {
     liqContract: "0xF8a1D4FF0f9b9Af7CE58E1fc1833688F3BFd6115"
+}
+
+const faroswap = {
+    contract: "0x3541423f25a1ca5c98fdbcf478405d3f0aad1164",
+    liqContract: "0xf05af5e9dc3b1dd3ad0c087bd80d7391283775e0",
+    dvmContract: "0x95a11BD0e5441786Bc290Ed4c5FC3f1147e5B784"
 }
 
 const routerAddress = "0x1a4de519154ae51200b0ad7c90f7fac75547888a"
@@ -40,7 +47,11 @@ const tokenArr = {
     usdc: "0xad902cf99c2de2f1ba5ec4d642fd7e49cae9ee37",
     usdt: "0xed59de2d7ad9c043442e381231ee3646fc3c2939",
     wPHRS: "0x76aaada469d23216be5f7c596fa25f282ff9b364",
-    PHRS: "0x76aaada469d23216be5f7c596fa25f282ff9b364"
+    PHRS: "0x76aaada469d23216be5f7c596fa25f282ff9b364",
+    wETH: "0xb056a6b9f61b2c0ebf4906aac341bd118a1763fe",
+    nUsdt: "0xD4071393f8716661958F766DF660033b3d35fD29",
+    nUsdc: "0x72df0bcd7276f2dFbAc900D1CE63c272C4BCcCED",
+    nWPHRS: "0x3019b247381c850ab53dc0ee53bce7a07ea9155f"
 }
 
 const authHeader = {
@@ -62,4 +73,4 @@ const authHeader = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0'
 }
 
-module.exports = { refferralCode, rateLimitConfig, pharos, authHeader, routerAddress, tokenArr, zenith, maxSuccessTransaction, skibidi }
+module.exports = { refferralCode, rateLimitConfig, pharos, faroswap, authHeader, routerAddress, tokenArr, zenith, maxSuccessTransaction, skibidi }

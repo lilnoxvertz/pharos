@@ -9,6 +9,7 @@ class Auth {
         const address = getSplittedAddress(wallet.address)
         const signature = await wallet.signMessage("pharos")
 
+        skibidi.processing(`${address} IS TRYING TO GET AUTH TOKEN`)
         const url = `https://api.pharosnetwork.xyz/user/login?address=${wallet.address}&signature=${signature}&invite_code=${reffCode}`
         const agent = proxy ? new HttpsProxyAgent(proxy) : undefined
 

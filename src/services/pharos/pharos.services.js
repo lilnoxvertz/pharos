@@ -168,6 +168,7 @@ class PharosClient {
 
                 success = true
                 skibidi.success(`${address} SUCCESSFULLY CLAIMED FAUCET`)
+
                 return {
                     status: true
                 }

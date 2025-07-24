@@ -42,6 +42,69 @@ class Workers {
         })
     }
 
+    static async domain(privateKey, proxy) {
+        return new Promise((resolve, reject) => {
+            const worker = new Worker(path.resolve(__dirname, "./task/domain.js"), {
+                workerData: {
+                    privateKey: privateKey,
+                    proxy: proxy
+                }
+            })
+
+            worker.on("message", (message) => {
+                if (message.type === "done") {
+                    resolve()
+                }
+
+                if (message.type === "success") {
+                    resolve()
+                }
+
+                if (message.type === "error") {
+                    reject(new Error(message.data))
+                }
+            })
+
+            worker.on("error", reject)
+            worker.on("exit", (code) => {
+                if (code !== 0) {
+                    reject(new Error("WORKER STOPPED"))
+                }
+            })
+        })
+    }
+
+    static async mint(privateKey) {
+        return new Promise((resolve, reject) => {
+            const worker = new Worker(path.resolve(__dirname, "./task/mint.js"), {
+                workerData: {
+                    privateKey: privateKey
+                }
+            })
+
+            worker.on("message", (message) => {
+                if (message.type === "done") {
+                    resolve()
+                }
+
+                if (message.type === "success") {
+                    resolve()
+                }
+
+                if (message.type === "error") {
+                    reject(new Error(message.data))
+                }
+            })
+
+            worker.on("error", reject)
+            worker.on("exit", (code) => {
+                if (code !== 0) {
+                    reject(new Error("WORKER STOPPED"))
+                }
+            })
+        })
+    }
+
     static async pointsWorker(walletAddress, token, proxy) {
         return new Promise((resolve, reject) => {
             const worker = new Worker(path.resolve(__dirname, "./task/point.js"), {
