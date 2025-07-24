@@ -23,7 +23,7 @@ const rateLimitConfig = {
     maxAttempt: 3
 }
 
-const maxSuccessTransaction = 3 // change this line
+const maxSuccessTransaction = 10// change this line
 
 const pharos = {
     rpc: new JsonRpcProvider("https://testnet.dplabs-internal.com"),
