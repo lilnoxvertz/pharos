@@ -5,7 +5,7 @@ const Workers = require("../worker/worker")
 
 async function main() {
     while (true) {
-        let maxWorker = 10
+        let maxWorker = 15
         console.clear()
         try {
             const wallets = Wallet.load()
@@ -33,7 +33,7 @@ async function main() {
             await Workers.startLimitedTask(mainTask, maxWorker)
             skibidi.success("ALL WALLETS HAVE COMPLETED A FULL CYCLE.")
             skibidi.processing("RESTARTING THE ENTIRE PROCESS IN 1 HOUR...")
-            await new Promise(resolve => setTimeout(resolve, 3600000))
+            await new Promise(resolve => setTimeout(resolve, 120000))
         } catch (error) {
             skibidi.failed(error)
             skibidi.processing("RESTARTING DUE TO ERROR IN 5 MINUTES...")

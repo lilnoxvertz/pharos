@@ -11,7 +11,7 @@
 
 5. go to config/config.js and go to line 26. change it to any amount that you want. this line decided about how much success transaction that was needed before proceeding to complete another task.
 
-   ```json
+   ```bash
    const maxSuccessTransaction = 10
    ```
 
@@ -37,6 +37,15 @@
    ```bash
    npm run generate
    ```
+
+- MINTING NFT
+  ```bash
+  npm run nft
+  ```
+- MINTING DOMAIN
+  ```bash
+  npm run domain
+  ```
 
 ## NOTE
 

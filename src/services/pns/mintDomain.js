@@ -1,7 +1,7 @@
-const { Wallet } = require("ethers");
+const { Wallet, parseEther } = require("ethers");
 const { skibidi, pharos } = require("../../config/config");
 const { Username } = require("./username");
-const { workerData } = require("worker_threads");
+const { workerData, parentPort } = require("worker_threads");
 const { getSplittedAddress } = require("../../utils/splitAddress");
 const { Domain } = require("./domain");
 
@@ -15,40 +15,76 @@ async function mint() {
     const wallet = new Wallet(privateKey, pharos.rpc)
     const truncatedAddress = getSplittedAddress(wallet.address)
 
-    try {
-        const username = Username.generateUsername()
-        const isRegistered = Username.check(username, proxy)
+    let minted = false
+    let attempt = 0
+    const maxAttempt = 3
 
+    while (!minted && attempt < maxAttempt) {
+        attempt++
+        try {
+            skibidi.processing(`[PNS] ${truncatedAddress} is generating a username`)
+            const username = Username.generateUsername()
+            const isRegistered = await Username.check(truncatedAddress, username, proxy)
 
-        if (isRegistered) {
-            skibidi.failed(`${truncatedAddress} Didnt return any username! repeating process..`)
-            await new Promise(r => setTimeout(r, 10000))
+            if (isRegistered.status) {
+                skibidi.failed(`[PNS] ${truncatedAddress} Returned a registered username or didnt actually return anything! Repeating process..`)
+                await new Promise(r => setTimeout(r, 10000))
+                continue
+            }
+
+            skibidi.warn(`[PNS] ${truncatedAddress} is minting ${username} domain..`)
+            const pns = new Domain(privateKey, username)
+
+            const balance = await pharos.rpc.getBalance(wallet.address)
+            const price = await pns.getPrice(proxy)
+            const priceInWei = parseEther(price.usernamePrice)
+
+            if (!price.status) {
+                skibidi.failed(`[PNS] ${truncatedAddress} Returned a registered username or didnt actually return anything! Repeating process..`)
+                await new Promise(r => setTimeout(r, 10000))
+                continue
+            }
+
+            if (balance < priceInWei) {
+                throw new Error(`[PNS] ${truncatedAddress} has insufficient balance to mint domain`)
+            }
+
+            const commit = await pns.commit()
+
+            if (!commit.status) {
+                skibidi.failed(`[PNS] ${truncatedAddress} Returned a registered username or didnt actually return anything! Repeating process..`)
+                await new Promise(r => setTimeout(r, 10000))
+                continue
+            }
+
+            skibidi.processing(`[PNS] ${truncatedAddress} Waiting 70 second before registering username`)
+            await delay()
+            const register = await pns.register(commit.secret, commit.bytes, price.usernamePrice)
+
+            if (!register.status) {
+                skibidi.failed(`[PNS] ${truncatedAddress} Returned a registered username or didnt actually return anything! Repeating process..`)
+                await new Promise(r => setTimeout(r, 10000))
+                continue
+            }
+
+            minted = true
+            parentPort.postMessage({
+                type: "done"
+            })
+        } catch (error) {
+            skibidi.failed(`[PNS] ${truncatedAddress} Error when trying to mint domain: ${error}`)
+            parentPort.postMessage({
+                type: "error",
+                data: error
+            })
         }
+    }
 
-        skibidi.warn(`${truncatedAddress} is minting ${username} domain..`)
-        const pns = new Domain(privateKey, username)
-
-        const commit = await pns.commit()
-
-        if (!commit.status) {
-            skibidi.failed(`${truncatedAddress} Failed committing username!`)
-            return
-        }
-
-        skibidi.processing(`${truncatedAddress} Waiting 60 second before registering username`)
-        await delay()
-        const register = pns.register(commit.secret)
-
-        if (!register.status) {
-            skibidi.failed(`${truncatedAddress} Failed registering username!`)
-            return
-        }
-
-        skibidi.success(`${truncatedAddress} Successfully registered a username`)
-        return
-    } catch (error) {
-        skibidi.failed(`${truncatedAddress} Error when trying to mint domain: ${error}`)
-        return
+    if (!minted && attempt === maxAttempt) {
+        skibidi.failed(`[PNS] ${truncatedAddress} Reached max attempt. failed minting username`)
+        parentPort.postMessage({
+            type: "failed"
+        })
     }
 }
 

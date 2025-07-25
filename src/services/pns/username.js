@@ -7,7 +7,7 @@ class Username {
         const character = "abcdefghijklmnopqrstuvwxyz0123456789"
         let username = ""
 
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0; i < 10; i++) {
             const randomIndex = character[Math.floor(Math.random() * character.length)]
             username += randomIndex
         }
@@ -49,34 +49,57 @@ class Username {
             }
         })
 
-        try {
-            const response = await fetch(url, {
-                method: "POST",
-                headers: header,
-                body: payload,
-                agent
-            })
+        let checked = false
+        let attempt = 0
+        const maxAttempt = 3
 
-            const result = await response.json()
-            const data = result.data
+        while (!checked && attempt < maxAttempt) {
+            attempt++
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: header,
+                    body: payload,
+                    agent
+                })
 
-            if (data.domain) {
-                skibidi.failed(`${address} ${username} is already registered!`)
+                const result = await response.json()
+
+                if (!response.ok) {
+                    skibidi.failed(`[PNS] ${address} Failed checking username. retrying in 10 sec`)
+                    await new Promise(r => setTimeout(r, 10000))
+                    continue
+                }
+
+                const data = result.data
+
+                if (data.domain) {
+                    skibidi.failed(`[PNS] ${address} ${username} is already registered!`)
+                    return {
+                        registered: true
+                    }
+                }
+
+                skibidi.success(`[PNS] ${address} ${username} isnt registered yet!`)
+                checked = true
+                return {
+                    status: false,
+                }
+            } catch (error) {
+                skibidi.failed(`[PNS]${address} Failed checking ${username} username: ${error}`)
                 return {
                     status: true
                 }
             }
+        }
 
-            skibidi.success(`${address} ${username} isnt registered yet!`)
+        if (!checked && attempt === maxAttempt) {
+            skibidi.failed(`[PNS] ${address} Reached max attempt. failed checking username`)
             return {
-                status: false,
-            }
-        } catch (error) {
-            skibidi.failed(`${address} Failed checking ${username} username: ${error}`)
-            return {
-                status: true
+                status: false
             }
         }
+
     }
 }
 

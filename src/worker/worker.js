@@ -56,8 +56,8 @@ class Workers {
                     resolve()
                 }
 
-                if (message.type === "success") {
-                    resolve()
+                if (message.type === "failed") {
+                    resolve
                 }
 
                 if (message.type === "error") {

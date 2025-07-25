@@ -13,11 +13,11 @@ async function main() {
     const wallet = new ethers.Wallet(privateKey, pharos.rpc)
 
     const taskList = [
-        "checkin",
+        //"checkin",
         "faucet",
-        "send",
-        "swap",
-        "liq"
+        //"send",
+        //"swap",
+        //"liq"
     ]
 
     const dex = [
@@ -138,7 +138,7 @@ async function main() {
 
             case "swap":
                 try {
-                    const randomDex = dex[Math.floor(Math.random() * dex.length)]
+                    const randomDex = "faroswap"//dex[Math.floor(Math.random() * dex.length)]
 
                     if (randomDex === "zenith") {
                         await Transaction.swapToken(wallet.privateKey)
@@ -162,7 +162,7 @@ async function main() {
 
             case "liq":
                 try {
-                    const randomDex = dex[Math.floor(Math.random() * dex.length)]
+                    const randomDex = "faroswap"//dex[Math.floor(Math.random() * dex.length)]
 
                     if (randomDex === "zenith") {
                         await Transaction.addLiquidity(wallet.privateKey)
