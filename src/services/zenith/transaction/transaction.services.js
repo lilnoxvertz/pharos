@@ -106,7 +106,7 @@ class Transaction {
             }
         }
 
-        skibidi.success(`[ZENITH] ${address} HAS SUCCESSFULLY COMPLETED (${stats.success}/${maxSuccessTransaction}) SEND TRANSACTIONS`)
+        skibidi.success(`[PHAROS] ${address} HAS SUCCESSFULLY COMPLETED (${stats.success}/${maxSuccessTransaction}) SEND TRANSACTIONS`)
         return {
             success: stats.success,
             reverted: stats.reverted
