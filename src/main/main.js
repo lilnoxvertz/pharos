@@ -5,7 +5,7 @@ const Workers = require("../worker/worker")
 
 async function main() {
     while (true) {
-        let maxWorker = 15
+        let maxWorker = 10
         console.clear()
         try {
             const wallets = Wallet.load()

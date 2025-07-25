@@ -4,7 +4,7 @@ const Wallet = require("../utils/wallet.utils");
 const Workers = require("../worker/worker");
 
 async function mintDomain() {
-    let maxWorker = 5
+    let maxWorker = 10
 
     try {
         const wallets = Wallet.load()

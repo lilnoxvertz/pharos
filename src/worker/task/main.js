@@ -13,11 +13,11 @@ async function main() {
     const wallet = new ethers.Wallet(privateKey, pharos.rpc)
 
     const taskList = [
-        //"checkin",
+        "checkin",
         "faucet",
-        //"send",
-        //"swap",
-        //"liq"
+        "send",
+        "swap",
+        "liq"
     ]
 
     const dex = [
