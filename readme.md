@@ -38,15 +38,6 @@
    npm run generate
    ```
 
-- MINTING NFT
-  ```bash
-  npm run nft
-  ```
-- MINTING DOMAIN
-  ```bash
-  npm run domain
-  ```
-
 ## NOTE
 
 for referral, go to config.js and change the referralCode with yours

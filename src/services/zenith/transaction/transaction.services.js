@@ -41,7 +41,7 @@ class Transaction {
     static async sendToken(wallet, proxy, token) {
         const recipients = Wallet.loadRecipientAddress()
         if (recipients.length === 0) {
-            skibidi.failed("[ZENITH] No recipient addresses found in recipient.txt. Skipping send task.")
+            skibidi.failed("[PHAROS] No recipient addresses found in recipient.txt. Skipping send task.")
             return { success: 0, reverted: 0 }
         }
 
@@ -52,14 +52,14 @@ class Transaction {
         const balance = await pharos.rpc.getBalance(sender.address)
         const minBalance = ethers.parseEther("0.0002")
         if (balance < minBalance) {
-            skibidi.warn(`[ZENITH] ${address} balance is too low for sending. Skipping send task.`)
+            skibidi.warn(`[PHAROS] ${address} balance is too low for sending. Skipping send task.`)
             return { success: 0, reverted: 0 }
         }
 
         const amountToSend = (balance * 1n) / 1000n
 
         if (amountToSend === 0n) {
-            skibidi.warn(`[ZENITH] ${address} 0.1% of balance is too small to send. Skipping send task.`)
+            skibidi.warn(`[PHAROS] ${address} 0.1% of balance is too small to send. Skipping send task.`)
             return { success: 0, reverted: 0 }
         }
 
@@ -74,7 +74,7 @@ class Transaction {
             const sr = getSplittedAddress(recipient)
 
             try {
-                skibidi.processing(`[ZENITH] ${address} IS SENDING ${ethers.formatEther(amountToSend)} PHRS TO ${sr}`)
+                skibidi.processing(`[PHAROS] ${address} IS SENDING ${ethers.formatEther(amountToSend)} PHRS TO ${sr}`)
                 const tx = await sender.sendTransaction({
                     to: recipient,
                     value: amountToSend
@@ -85,19 +85,19 @@ class Transaction {
                 const txStatus = await this.check(tx.hash, agent)
 
                 if (txStatus.status !== 1) {
-                    throw new Error(`[ZENITH] ${address} FAILED VERIFYING HASH`)
+                    throw new Error(`[PHAROS] ${address} FAILED VERIFYING HASH`)
                 }
 
-                skibidi.success(`[ZENITH] ${address} SUCCESSFULLY SENT ${ethers.formatEther(amountToSend)} PHRS TO ${sr}. REPORTING`)
+                skibidi.success(`[PHAROS] ${address} SUCCESSFULLY SENT ${ethers.formatEther(amountToSend)} PHRS TO ${sr}. REPORTING`)
                 stats.success++
 
                 const report = await PharosClient.reportSendTokenTask(sender.address, token, tx.hash, agent)
 
                 if (!report.status) {
-                    throw new Error(`${address} SUCCESSFULLY SENT TOKEN BUT FAILED TO REPORT IT.`)
+                    throw new Error(`[PHAROS] ${address} SUCCESSFULLY SENT TOKEN BUT FAILED TO REPORT IT.`)
                 }
             } catch (error) {
-                skibidi.failed(`[ZENITH] ${address} ERROR: ${error.message}`)
+                skibidi.failed(`[PHAROS] ${address} ERROR: ${error.message}`)
                 stats.reverted++
             }
 
