@@ -173,7 +173,7 @@ class Transaction {
                             tokenOutAddress = tokens[(randomTokenIndex + 1) % tokens.length]
                         }
 
-                        const tokenInContract = new Contract(tokenInAddress, erc20Abi, sender)
+                        let tokenInContract = new Contract(tokenInAddress, erc20Abi, sender)
                         let tokenInBalance = await tokenInContract.balanceOf(sender.address)
 
                         if (tokenInBalance === 0n) {
@@ -186,6 +186,8 @@ class Transaction {
                             ]
 
                             tokenInAddress = tokenArr.PHRS
+                            tokenInContract = new Contract(tokenInAddress, erc20Abi, sender)
+                            tokenInBalance = await tokenInContract.balanceOf(sender.address)
                             tokenOutAddress = fallbackToken[Math.floor(Math.random() * fallbackToken.length)]
                         }
 
@@ -193,12 +195,13 @@ class Transaction {
 
                         if (amountToSwap === 0n) {
                             skibidi.warn(`[ZENITH] ${address} 1% of token balance is too small to swap.`)
+
                             if (tokenInAddress === tokenArr.PHRS) {
                                 skibidi.warn(`[ZENITH] ${address} depositing phrs token..`)
                                 const amountToDeposit = parseEther("0.01")
                                 this.deposit(tokenInContract, amountToDeposit)
+                                continue
                             }
-                            continue
                         }
 
                         const allowance = await tokenInContract.allowance(sender.address, routerAddress)

@@ -23,7 +23,7 @@ const rateLimitConfig = {
     maxAttempt: 3
 }
 
-const maxSuccessTransaction = 10 // change this line
+const maxSuccessTransaction = 2 // change this line
 
 const pharos = {
     rpc: new JsonRpcProvider("https://api.zan.top/node/v1/pharos/testnet/b59d50439860470d84f87ee95a4c7484"),
@@ -33,6 +33,10 @@ const pharos = {
 
 const zenith = {
     liqContract: "0xF8a1D4FF0f9b9Af7CE58E1fc1833688F3BFd6115"
+}
+
+const aquaflux = {
+    contract: "0xCc8cF44E196CaB28DBA2d514dc7353af0eFb370E"
 }
 
 const faroswap = {
@@ -73,4 +77,4 @@ const authHeader = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0'
 }
 
-module.exports = { refferralCode, rateLimitConfig, pharos, faroswap, authHeader, routerAddress, tokenArr, zenith, maxSuccessTransaction, skibidi }
+module.exports = { refferralCode, rateLimitConfig, pharos, faroswap, authHeader, routerAddress, tokenArr, zenith, maxSuccessTransaction, skibidi, aquaflux }
