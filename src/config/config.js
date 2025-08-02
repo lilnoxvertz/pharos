@@ -23,7 +23,7 @@ const rateLimitConfig = {
     maxAttempt: 3
 }
 
-const maxSuccessTransaction = 2 // change this line
+const maxSuccessTransaction = 10// change this line
 
 const pharos = {
     rpc: new JsonRpcProvider("https://api.zan.top/node/v1/pharos/testnet/b59d50439860470d84f87ee95a4c7484"),
