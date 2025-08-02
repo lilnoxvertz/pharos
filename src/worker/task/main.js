@@ -13,11 +13,11 @@ async function main() {
     const wallet = new ethers.Wallet(privateKey, pharos.rpc)
 
     const taskList = [
-        //"checkin",
-        //"faucet",
-        //"send",
+        "checkin",
+        "faucet",
+        "send",
         "swap",
-        //"liq"
+        "liq"
     ]
 
     const dex = [
@@ -138,7 +138,7 @@ async function main() {
 
             case "swap":
                 try {
-                    const randomDex = "zenith"//dex[Math.floor(Math.random() * dex.length)]
+                    const randomDex = dex[Math.floor(Math.random() * dex.length)]
 
                     if (randomDex === "zenith") {
                         await Transaction.swapToken(wallet.privateKey)
