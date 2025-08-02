@@ -26,7 +26,7 @@ const rateLimitConfig = {
 const maxSuccessTransaction = 10// change this line
 
 const pharos = {
-    rpc: new JsonRpcProvider("https://api.zan.top/node/v1/pharos/testnet/b59d50439860470d84f87ee95a4c7484"),
+    rpc: new JsonRpcProvider("https://testnet.dplabs-internal.com"),
     contractAddress: "0x76aaada469d23216be5f7c596fa25f282ff9b364",
     pnsContract: "0x51be1ef20a1fd5179419738fc71d95a8b6f8a175"
 }
