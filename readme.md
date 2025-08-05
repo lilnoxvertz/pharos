@@ -20,7 +20,7 @@
 
   set any value to true if you want to work on that task, and false to skip it
 ```json
-const tasks = {
+{
     faucet: true,
     checkin: true,
     send: {
