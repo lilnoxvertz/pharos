@@ -34,6 +34,9 @@
     liq: {
         zenith: true,
         faroswap: true
+    },
+    rwa: {
+        aquaflux: true
     }
 }
 ```
