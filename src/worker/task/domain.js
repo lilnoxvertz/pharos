@@ -1,3 +1,3 @@
-const { mint } = require("../../services/pns/mintDomain");
+const { mintDomain } = require("../../services/pns/mintDomain");
 
-mint()
+mintDomain()

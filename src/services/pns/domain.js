@@ -1,16 +1,19 @@
-const { Contract, hexlify, randomBytes, ethers, parseEther, keccak256, id, namehash } = require("ethers");
-const { Wallet } = require("ethers");
-const { pharos, skibidi } = require("../../config/config");
-const { getSplittedAddress } = require("../../utils/splitAddress");
-const Transaction = require("../zenith/transaction/transaction.services");
-const { Interface } = require("ethers");
-const { AbiCoder } = require("ethers");
-
+const { hexlify, randomBytes, id, keccak256, parseEther, ethers } = require("ethers")
+const { Transaction } = require("../transaction")
+const { Username } = require("./username")
+const { Interface } = require("ethers")
+const { AbiCoder } = require("ethers")
+const { yap } = require("../../utils/logger")
+const { Contract } = require("ethers")
+const { dexList, rateLimitConfig, provider } = require("../../config")
+const { delay } = require("../../utils/delay")
 
 const abi = [
     "function commit(bytes32 commitment)",
     "function register(string name, address owner, uint256 duration, bytes32 secret, address resolver, bytes[] calldata data, bool reverseRecord, uint16 ownerControlledFuses) payable"
 ]
+
+const pnsContractAddress = dexList.contract.pharos.pnsContract
 
 const oneYear = 31536000
 const resolverAddress = "0x9a43dca1c3bb268546b98eb2ab1401bfc5b58505"
@@ -18,184 +21,91 @@ const reverseRecord = true
 const ownerControlledFuses = 0
 const coinType = 2148182576
 
-const iface = new Interface([
+const setAddrIface = new Interface([
     "function setAddr(bytes32 node, uint256 coinType, bytes memory a)"
 ])
 
-class Domain {
-    constructor(privateKey, username) {
-        this.wallet = new Wallet(privateKey, pharos.rpc);
-        this.contract = new Contract(pharos.pnsContract, abi, this.wallet);
-        this.username = username;
-        this.label = this.username.trim().split(".")[0]
-        this.truncatedAddress = getSplittedAddress(this.wallet.address)
+class Domain extends Transaction {
+    /**
+     * @param {import("ethers").Wallet} wallet 
+     * @param {import("ethers").Contract} contract 
+     * @param {String} username 
+     */
+    constructor(wallet, username, price) {
+        const contract = new Contract(pnsContractAddress, abi, wallet)
+        const webName = "PNS"
+        super(wallet, contract, webName)
+        this.username = username
+        this.label = username.trim().split(".")[0]
+        this.price = price
+        this.bytes = null
+        this.secret = hexlify(randomBytes(32))
     }
 
-    async commit() {
+    commit() {
         try {
-            const _secret = hexlify(randomBytes(32))
+            yap.delay(`[PNS] ${this.truncatedAddress} is constructing commit calldata`)
             const labelHash = id(this.label)
-            const node = namehash(this.username)
+            const node = Username.hash(this.username)
 
-            const encodedBytes = iface.encodeFunctionData("setAddr", [
+            const setAddrData = [
                 node, coinType, this.wallet.address
-            ])
+            ]
 
-            const _bytes = [encodedBytes]
+            const encodedBytes = setAddrIface.encodeFunctionData("setAddr", setAddrData)
+            this.bytes = [encodedBytes]
 
-            const encoded = AbiCoder.defaultAbiCoder().encode(
-                ['bytes32', 'address', 'uint256', 'bytes32', 'address', 'bytes[]', 'bool', 'uint16'],
-                [labelHash, this.wallet.address, oneYear, _secret, resolverAddress, _bytes, reverseRecord, ownerControlledFuses]
-            )
+            const params = [
+                "bytes32", "address", "uint256", "bytes32", "address", "bytes[]", "bool", "uint16"
+            ]
 
-            const commitHash = keccak256(encoded)
+            const paramsData = [
+                labelHash, this.wallet.address, oneYear, this.secret, resolverAddress, this.bytes, reverseRecord, ownerControlledFuses
+            ]
 
-            skibidi.processing(`[PNS] ${this.truncatedAddress} Sending commit hash..`)
+            const encodedParams = AbiCoder.defaultAbiCoder().encode(params, paramsData)
+            const _calldata = keccak256(encodedParams)
 
-            const tx = await this.contract.commit(commitHash, {
-                gasLimit: 300000
-            })
-
-            await tx.wait()
-
-            const receipt = await Transaction.check(tx.hash)
-
-            if (receipt.status !== 1) {
-                skibidi.failed(`[PNS] ${this.truncatedAddress} Failed verifting tx hash!`)
-                return {
-                    status: false
-                }
+            this.txData = {
+                functionName: "commit",
+                args: [_calldata],
+                method: "committing hash"
             }
 
-            skibidi.success(`[PNS] ${this.truncatedAddress} Successfully committing username!`)
-            return {
-                status: true,
-                secret: _secret,
-                bytes: _bytes
-            }
+            return this
         } catch (error) {
-            skibidi.failed(`[PNS] ${this.truncatedAddress} Error when committing username: ${error}`)
-            return {
-                status: false
-            }
+            yap.error(`[${this.webName}] ${this.truncatedAddress} Error when constructing commit hash: ${error}`)
+            return false
         }
     }
 
-    async register(secret, bytes, price) {
+    register() {
         try {
-            const amount = parseEther(String(price))
-
-            const tx = await this.contract.register(
-                this.label,
-                this.wallet.address,
-                oneYear,
-                secret,
-                resolverAddress,
-                bytes,
-                reverseRecord,
-                ownerControlledFuses,
-                {
-                    value: amount,
+            yap.delay(`[PNS] ${this.truncatedAddress} is constructing register calldata`)
+            const registerFee = parseEther(String(this.price))
+            this.txData = {
+                functionName: "register",
+                args: [
+                    this.label,
+                    this.wallet.address,
+                    oneYear,
+                    this.secret,
+                    resolverAddress,
+                    this.bytes,
+                    reverseRecord,
+                    ownerControlledFuses,
+                ],
+                overrides: {
+                    value: registerFee,
                     gasLimit: 800000
-                }
-            )
-
-            await tx.wait()
-            const receipt = await Transaction.check(tx.hash)
-
-            if (receipt.status !== 1) {
-                skibidi.failed(`[PNS] ${this.truncatedAddress} Failed when verifying tx hash`)
-                return {
-                    status: false
-                }
+                },
+                method: "registering domain"
             }
 
-            skibidi.success(`[PNS] ${this.truncatedAddress} Successfully registered ${this.username} as username`)
-            return {
-                status: true
-            }
+            return this
         } catch (error) {
-            skibidi.failed(`[PNS] ${this.truncatedAddress} Error when registering username: ${error}`)
-            return {
-                status: false
-            }
-        }
-    }
-
-    async getPrice() {
-        let priceFound = false
-        let attempt = 0
-        const maxAttempt = 3
-
-        while (!priceFound && attempt < maxAttempt) {
-            attempt++
-            try {
-                skibidi.processing(`[PNS] ${this.truncatedAddress} is fetching username price..`)
-
-                const createWrapperCalldata = () => {
-                    const internalSelector = "0x83e7f6ff"
-                    const internalEncodedParams = AbiCoder.defaultAbiCoder().encode(
-                        ['string', 'uint256'],
-                        [this.label, oneYear]
-                    );
-                    const internalCalldata = internalSelector + internalEncodedParams.slice(2)
-
-                    const instructionObject = [
-                        "0x51bE1EF20a1fD5179419738FC71D95A8b6f8A175",
-                        true,
-                        internalCalldata
-                    ];
-
-                    const mainSelector = "0x82ad56cb"
-                    const mainEncodedParams = AbiCoder.defaultAbiCoder().encode(
-                        ['(address,bool,bytes)[]'],
-                        [[instructionObject]]
-                    );
-
-                    const finalCalldata = mainSelector + mainEncodedParams.slice(2)
-
-                    return finalCalldata
-                }
-
-                const calldata = createWrapperCalldata()
-
-                const _price = await pharos.rpc.call({
-                    to: "0x663bf72dc7477772d8bafb01118d885359b17d07",
-                    data: calldata
-                })
-
-                if (!_price || _price === "0x") {
-                    skibidi.failed(`[PNS] ${this.truncatedAddress} Failed fetching username price. retrying in 10 sec`)
-                    await new Promise(r => setTimeout(r, 10000))
-                    continue
-                }
-
-                const getReadableAmount = (hex) => {
-                    const start = 2 + (6 * 64)
-                    const priceHex = "0x" + hex.substring(start, start + 64)
-                    const priceInWei = ethers.toBigInt(priceHex)
-                    const readableAmount = ethers.formatEther(priceInWei)
-
-                    return readableAmount
-                }
-
-                priceFound = true
-                const _usernamePrice = getReadableAmount(_price)
-
-                return {
-                    status: true,
-                    usernamePrice: _usernamePrice
-                }
-            } catch (error) {
-                skibidi.failed(`[PNS] ${this.truncatedAddress} Error when fething price: ${error}`)
-                continue
-            }
-        }
-
-        if (!priceFound && attempt === maxAttempt) {
-            return {
-                status: false
-            }
+            yap.error(`[${this.webName}] ${this.truncatedAddress} Error when constructing register calldata: ${error}`)
+            return false
         }
     }
 }

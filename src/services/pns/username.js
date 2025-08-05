@@ -1,6 +1,10 @@
-const { ethers, namehash } = require("ethers")
-const { skibidi } = require("../../config/config")
+const { namehash, ethers } = require("ethers")
+const { yap } = require("../../utils/logger")
 const { HttpsProxyAgent } = require("https-proxy-agent")
+const { rateLimitConfig, provider } = require("../../config")
+const { AbiCoder } = require("ethers")
+const { delay } = require("../../utils/delay")
+const { truncateAddress } = require("../../utils/truncateAddress")
 
 class Username {
     static generateUsername() {
@@ -24,6 +28,8 @@ class Username {
         const url = "https://graphql.pharosname.com/"
         const hashedUsername = this.hash(username)
         const agent = proxy ? new HttpsProxyAgent(proxy) : undefined
+        const truncatedAddress = truncateAddress(address)
+
         const header = {
             'accept': '*/*',
             'accept-encoding': 'gzip, deflate, br, zstd',
@@ -66,7 +72,7 @@ class Username {
                 const result = await response.json()
 
                 if (!response.ok) {
-                    skibidi.failed(`[PNS] ${address} Failed checking username. retrying in 10 sec`)
+                    yap.error(`[PNS] ${truncatedAddress} Failed checking username. retrying in 10 sec`)
                     await new Promise(r => setTimeout(r, 10000))
                     continue
                 }
@@ -74,19 +80,19 @@ class Username {
                 const data = result.data
 
                 if (data.domain) {
-                    skibidi.failed(`[PNS] ${address} ${username} is already registered!`)
+                    yap.error(`[PNS] ${truncatedAddress} ${username} is already registered!`)
                     return {
                         registered: true
                     }
                 }
 
-                skibidi.success(`[PNS] ${address} ${username} isnt registered yet!`)
+                yap.success(`[PNS] ${truncatedAddress} ${username} isnt registered yet!`)
                 checked = true
                 return {
                     status: false,
                 }
             } catch (error) {
-                skibidi.failed(`[PNS]${address} Failed checking ${username} username: ${error}`)
+                yap.error(`[PNS]${truncatedAddress} Failed checking ${username} username: ${error}`)
                 return {
                     status: true
                 }
@@ -94,12 +100,91 @@ class Username {
         }
 
         if (!checked && attempt === maxAttempt) {
-            skibidi.failed(`[PNS] ${address} Reached max attempt. failed checking username`)
+            yap.error(`[PNS] ${truncatedAddress} Reached max attempt. failed checking username`)
             return {
                 status: false
             }
         }
+    }
 
+    static async getPrice(label, address) {
+        const oneYear = 31536000
+
+        let priceFound = false
+        let attempt = 0
+        const maxAttempt = rateLimitConfig.api
+        const truncatedAddress = truncateAddress(address)
+
+        while (!priceFound && attempt < maxAttempt) {
+            attempt++
+            try {
+                yap.warn(`[PNS] ${truncatedAddress} is fetching username price`)
+
+                const createWrapperCalldata = () => {
+                    const internalSelector = "0x83e7f6ff"
+                    const internalEncodedParams = AbiCoder.defaultAbiCoder().encode(
+                        ['string', 'uint256'],
+                        [label, oneYear]
+                    );
+                    const internalCalldata = internalSelector + internalEncodedParams.slice(2)
+
+                    const instructionObject = [
+                        "0x51bE1EF20a1fD5179419738FC71D95A8b6f8A175",
+                        true,
+                        internalCalldata
+                    ];
+
+                    const mainSelector = "0x82ad56cb"
+                    const mainEncodedParams = AbiCoder.defaultAbiCoder().encode(
+                        ['(address,bool,bytes)[]'],
+                        [[instructionObject]]
+                    );
+
+                    const finalCalldata = mainSelector + mainEncodedParams.slice(2)
+
+                    return finalCalldata
+                }
+
+                const calldata = createWrapperCalldata()
+
+                const _price = await provider.call({
+                    to: "0x663bf72dc7477772d8bafb01118d885359b17d07",
+                    data: calldata
+                })
+
+                if (!_price || _price === "0x") {
+                    yap.error(`[PNS] ${truncatedAddress} Failed fetching username price. retrying in 10 sec`)
+                    await delay(10)
+                    continue
+                }
+
+                const getReadableAmount = (hex) => {
+                    const start = 2 + (6 * 64)
+                    const priceHex = "0x" + hex.substring(start, start + 64)
+                    const priceInWei = ethers.toBigInt(priceHex)
+                    const readableAmount = ethers.formatEther(priceInWei)
+
+                    return readableAmount
+                }
+
+                priceFound = true
+                const _usernamePrice = getReadableAmount(_price)
+
+                return {
+                    status: true,
+                    usernamePrice: _usernamePrice
+                }
+            } catch (error) {
+                yap.error(`[PNS] ${truncatedAddress} Error when fething price: ${error}`)
+                continue
+            }
+        }
+
+        if (!priceFound && attempt === maxAttempt) {
+            return {
+                status: false
+            }
+        }
     }
 }
 

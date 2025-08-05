@@ -1,42 +1,73 @@
 ## SETUP
 
-1. ```bash
-   npm install
-   ```
-2. fill proxy.txt if u have proxy (format should be either ip:port:username:passord or ip:port)
+- clone the repo
+  `bash
+ gitclone https://github.com/lilnoxvertz/pharos.git
+`
 
-3. fill wallet.txt with your private key
+- install the package
+  `bash
+ npm install
+`
 
-4. fill recipient.txt with wallet address that u wanted to send tokens or just use the one provided
+- fill everything in this file
+  wallet.txt: fill with your private key
+  proxy.txt: fill with your proxy (format should be either ip:port:username:passord or ip:port)
+  twitterUsername.txt: fill with anyone twitter username
 
-5. go to config/config.js and go to line 26. change it to any amount that you want. this line decided about how much success transaction that was needed before proceeding to complete another task.
+- setup for task
+  go to src/transaction/config.js
 
-   ```bash
-   const maxSuccessTransaction = 10
-   ```
+  set any value to true if you want to work on that task, and false to skip it
+  `bash
+const tasks = {
+    faucet: true,
+    checkin: true,
+    send: {
+        pharos: true,
+        primus: true
+    },
+    swap: {
+        zenith: true,
+        faroswap: true,
+    },
+    liq: {
+        zenith: true,
+        faroswap: true
+    }
+}
+`
+  and set the value of this code to determine how many transaction should the address do
+  `bash
+ const transactionLimitConfig = 10
+`
 
 ## COMMAND
 
-- COMPLETING DAILY TASK
-  this command will automatically run every task like claiming faucet, checking in, swapping, sending, and adding liquidity. it will stop if you close or stop the bot
+- main task (swap, checkin, liq, faucet)
+  note that this command will do an infinite loop.
 
-  ```bash
-  npm start
-  ```
+`bash
+ npm start
+`
 
-- CHECKING WALLET DATA
+- minting nft (grandline)
 
-  ```bash
-  npm run data
-  ```
+`bash
+ npm run nft
+`
 
-- GENERATE WALLET
+- minting domain (pns)
 
-1. go to src > main > generate.wallet.js and change the amount, then run this command
+`bash
+ npm run domain
+`
 
-   ```bash
-   npm run generate
-   ```
+- generating wallet
+
+`bash
+ npm run generate
+`
 
 ## NOTE
 

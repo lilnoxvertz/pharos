@@ -1,5 +1,5 @@
 const fs = require("fs")
-const { skibidi } = require("../config/config")
+const { yap } = require("./logger")
 
 class Proxy {
     static load() {
@@ -16,16 +16,16 @@ class Proxy {
                     const [ip, port] = parts
                     return `https://${ip}:${port}`
                 } else {
-                    skibidi.failed(`${parts} IS A INVALID PROXY FORMAT!`)
-                    skibidi.failed("IT SHOULD BE EITHER IP:PORT:USERNAME:PASSWORD OR IP:PORT")
+                    yap.error(`${parts} IS A INVALID PROXY FORMAT!`)
+                    yap.error("IT SHOULD BE EITHER IP:PORT:USERNAME:PASSWORD OR IP:PORT")
                 }
             })
     }
 
-    static async get(array, index) {
+    static get(array, index) {
         const proxy = array.length === 0 ? "" : array[index % array.length]
         return proxy
     }
 }
 
-module.exports = Proxy
+module.exports = { Proxy }
