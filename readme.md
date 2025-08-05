@@ -1,9 +1,9 @@
 ## SETUP
 
 - clone the repo
-  `bash
+  ``bash
  gitclone https://github.com/lilnoxvertz/pharos.git
-`
+``
 
 - install the package
   `bash
