@@ -19,7 +19,7 @@
   go to src/transaction/config.js
 
   set any value to true if you want to work on that task, and false to skip it
-  `bash
+  `json
 const tasks = {
     faucet: true,
     checkin: true,
