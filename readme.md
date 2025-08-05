@@ -19,7 +19,7 @@
   go to src/transaction/config.js
 
   set any value to true if you want to work on that task, and false to skip it
-  `json
+  ``json
 const tasks = {
     faucet: true,
     checkin: true,
@@ -36,7 +36,7 @@ const tasks = {
         faroswap: true
     }
 }
-`
+``
   and set the value of this code to determine how many transaction should the address do
   `bash
  const transactionLimitConfig = 10
