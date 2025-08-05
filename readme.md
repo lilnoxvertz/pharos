@@ -1,12 +1,12 @@
 ## SETUP
 
 - clone the repo
-  ``bash
+  `
  gitclone https://github.com/lilnoxvertz/pharos.git
-``
+`
 
 - install the package
-  `bash
+  `
  npm install
 `
 
@@ -41,7 +41,7 @@
 }
 ```
   and set the value of this code to determine how many transaction should the address do
-  `bash
+  `
  const transactionLimitConfig = 10
 `
 
@@ -50,25 +50,25 @@
 - main task (swap, checkin, liq, faucet)
   note that this command will do an infinite loop.
 
-`bash
+`
  npm start
 `
 
 - minting nft (grandline)
 
-`bash
+`
  npm run nft
 `
 
 - minting domain (pns)
 
-`bash
+`
  npm run domain
 `
 
 - generating wallet
 
-`bash
+`
  npm run generate
 `
 
