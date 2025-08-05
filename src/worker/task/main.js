@@ -217,21 +217,15 @@ const taskHandlers = {
             while (transactionCount < transactionLimitConfig) {
                 transactionCount++
                 try {
-                    const constructedLiqCalldata = await zenith.addLiquidity()
+                    const randomDex = "zenith"//dex[Math.floor(Math.random() * dex.length)]
 
-                    if (!constructedLiqCalldata) {
-                        parentPort.postMessage({
-                            type: "failed"
-                        })
+                    if (randomDex === "zenith") {
+                        await Transaction.swapToken(wallet.privateKey)
+                    } else if (randomDex === "faroswap") {
+                        await FaroDex.swapToken(wallet.privateKey, proxy)
                     }
 
-                    const executedTransaction = await zenith.executeWithWallet()
-
-                    if (!executedTransaction) {
-                        parentPort.postMessage({
-                            type: "failed"
-                        })
-                    }
+                    skibidi.warn(`${address} SUCCESSFULLY COMPLETED ${currentTask.toUpperCase()} TASK ON ${randomDex}!`)
 
                     parentPort.postMessage({
                         type: "done"
