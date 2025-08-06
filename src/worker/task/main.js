@@ -343,15 +343,15 @@ const taskHandlers = {
 async function main() {
     const availableTask = []
 
-    // if (!token) {
-    //     const tokenStatus = await getToken()
+    if (!token) {
+        const tokenStatus = await getToken()
 
-    //     if (!tokenStatus) {
-    //         parentPort.postMessage({
-    //             type: "failed"
-    //         })
-    //     }
-    // }
+        if (!tokenStatus) {
+            parentPort.postMessage({
+                type: "failed"
+            })
+        }
+    }
 
     const filterTask = (task, currentPath = "") => {
         for (const key in task) {
