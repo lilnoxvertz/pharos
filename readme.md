@@ -1,21 +1,21 @@
 ## SETUP
 
-- clone the repo
+# clone the repo
   `
  gitclone https://github.com/lilnoxvertz/pharos.git
 `
 
-- install the package
+# install the package
   `
  npm install
 `
 
-- fill everything in this file
-  wallet.txt: fill with your private key
-  proxy.txt: fill with your proxy (format should be either ip:port:username:passord or ip:port)
-  twitterUsername.txt: fill with anyone twitter username
+# fill everything in this file
+ - wallet.txt: fill with your private key
+ - proxy.txt: fill with your proxy (format should be either ip:port:username:passord or ip:port)
+ - twitterUsername.txt: fill with anyone twitter username
 
-- setup for task
+# setup for task
   go to src/transaction/config.js
 
   set any value to true if you want to work on that task, and false to skip it
