@@ -24,7 +24,7 @@ const tasks = {
 // set this to either 1, 2, 3 or 4 to prioritize a wallet with a level between minLevel and maxLevel,
 // and skipping a wallet with higher level than the maxLevel
 const minLevel = 1
-const maxLevel = 3
+const maxLevel = 5
 
 const refferralCode = "PIeu5IbkQuQfH7zd"
 
