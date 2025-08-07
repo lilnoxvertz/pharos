@@ -362,7 +362,7 @@ const levelChecker = (point) => {
 }
 
 async function main() {
-    const randomSecond = Math.floor(Math.random() * 120) + 10
+    const randomSecond = Math.floor(Math.random() * 30) + 10
     yap.delay(`[MAIN] ${truncatedAddress} waiting ${randomSecond} second before starting any task`)
     await delay(randomSecond)
 
