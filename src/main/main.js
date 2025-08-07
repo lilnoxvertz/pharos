@@ -41,6 +41,8 @@ async function main() {
                 task.push(() => Workers.main(privateKey, proxy, i))
             }
 
+            yap.warn(`[MAIN] Starting cycle`)
+
             await Workers.startLimitedTask(task, maxWorker)
             yap.delay(`[MAIN] all wallet has completed task. restarting in 60 minute`)
             const minutes = 60 * 60
