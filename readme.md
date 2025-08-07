@@ -46,7 +46,7 @@
 `
 
   and set the value for this code to anything you want
-  `bash
+  `
   const minValue = 1 
   const maxValua = 5
 `
