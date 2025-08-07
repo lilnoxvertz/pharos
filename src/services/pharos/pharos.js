@@ -31,6 +31,7 @@ class Pharos {
      * @param {import("ethers").Wallet} wallet 
      */
     constructor(wallet) {
+        this.webName = "PHAROS"
         this.wallet = wallet
         this.truncatedAddress = truncateAddress(wallet.address)
     }
@@ -108,7 +109,7 @@ class Pharos {
             const tx = await this.wallet.sendTransaction({ value: amountToSend })
             await tx.wait()
 
-            const receipt = await Transaction.check(tx.hash)
+            const receipt = await new Transaction(this.wallet, undefined, this.webName).check(tx.hash)
 
             if (!receipt.status) {
                 yap.error(`[PHAROS] ${this.truncatedAddress} Failed confirming tx hash`)
@@ -357,6 +358,52 @@ class Pharos {
 
         if (!success && attempt === maxAttempt) {
             yap.error(`[PHAROS] ${truncatedAddress} Reached max attempt. Failed getting faucet status`)
+            return false
+        }
+    }
+
+    static async getPoint(walletAddress, token, proxy) {
+        const url = `https://api.pharosnetwork.xyz/user/profile?address=${walletAddress}`
+        const agent = proxy ? new HttpsProxyAgent(proxy) : undefined
+        const truncatedAddress = truncateAddress(walletAddress)
+
+        const header = {
+            ...authHeader,
+            "Authorization": token
+        }
+
+        let pointFound = false
+        let attempt = 0
+        const maxAttempt = rateLimitConfig.api
+
+        while (!pointFound && attempt < maxAttempt) {
+            attempt++
+            try {
+                yap.delay(`[PHAROS] ${truncatedAddress} is trying to get wallet point`)
+                const response = await fetch(url, {
+                    method: "GET",
+                    headers: header,
+                    agent
+                })
+
+                if (!response.ok) {
+                    yap.error(`[PHAROS] ${truncatedAddress} Failed getting user data. Retrying (${attempt}/${maxAttempt})`)
+                    await delay(10)
+                    continue
+                }
+                const result = await response.json()
+                const data = result.data.user_info
+                const totalPoint = data.TotalPoints
+
+                return totalPoint
+            } catch (error) {
+                yap.error(`[PHAROS] Error when trying to get profile data: ${error}`)
+                return false
+            }
+        }
+
+        if (!pointFound && attempt === maxAttempt) {
+            yap.error(`[PHAROS] ${truncatedAddress} Reached max attempt. Failed getting profile data`)
             return false
         }
     }

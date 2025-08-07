@@ -42,6 +42,12 @@ const tasks = {
  const transactionLimitConfig = 10
 `
 
+  and set the value for this code to anything you want
+  `bash
+  const minValue = 1 
+  const maxValua = 5
+`
+
 ## COMMAND
 
 - main task (swap, checkin, liq, faucet)

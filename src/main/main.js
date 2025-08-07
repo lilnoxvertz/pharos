@@ -5,8 +5,9 @@ const { maxWorker } = require("../config");
 const { Workers } = require("../worker/worker");
 const { delay } = require("../utils/delay");
 
+let cycle = 0
+
 async function main() {
-    console.clear()
     const walletList = Wallet.load()
     const proxyList = Proxy.load()
 
@@ -20,20 +21,27 @@ async function main() {
         maxWorker = 2
     }
 
+    //await delay(120)
     while (true) {
+        cycle++
+        console.clear()
+        yap.warn(`[MAIN] Starting cycle: ${cycle}`)
         try {
             const task = []
 
             for (let i = 0; i < walletList.length; i++) {
                 const privateKey = walletList[i]
                 const proxy = Proxy.get(proxyList, i)
-                task.push(() => Workers.main(privateKey, proxy))
+
+                if (!privateKey) {
+                    yap.error(`[INDEX ${i}] DOESNT HAVE PRIVATE KEY`)
+                    missingPrivateKey.push(i)
+                }
+
+                task.push(() => Workers.main(privateKey, proxy, i))
             }
 
-            yap.warn(`[MAIN] Starting cycle`)
-
-            const a = await Workers.startLimitedTask(task, maxWorker)
-            console.log(a)
+            await Workers.startLimitedTask(task, maxWorker)
             yap.delay(`[MAIN] all wallet has completed task. restarting in 60 minute`)
             const minutes = 60 * 60
             await delay(minutes)

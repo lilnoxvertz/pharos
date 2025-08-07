@@ -11,7 +11,7 @@ class Transaction {
      */
 
     constructor(wallet, contract, webName) {
-        this.webName = webName.toUpperCase()
+        this.webName = webName ?? undefined
 
         if (!wallet) {
             yap.error(`[${this.webName}] Error: No Wallet Instance Found!`)

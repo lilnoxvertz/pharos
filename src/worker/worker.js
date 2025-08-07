@@ -3,12 +3,13 @@ const path = require("path")
 const { yap } = require("../utils/logger")
 
 class Workers {
-    static async main(privateKey, proxy) {
+    static async main(privateKey, proxy, index) {
         return new Promise((resolve, reject) => {
             const worker = new Worker(path.resolve(__dirname, "./task/main.js"), {
                 workerData: {
                     privateKey: privateKey,
-                    proxy: proxy
+                    proxy: proxy,
+                    index: index
                 }
             })
 

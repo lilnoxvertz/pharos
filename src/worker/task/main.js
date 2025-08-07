@@ -1,5 +1,5 @@
 const { workerData, parentPort } = require("worker_threads")
-const { tasks, provider, refferralCode, transactionLimitConfig } = require("../../config")
+const { tasks, provider, refferralCode, transactionLimitConfig, maxLevel, minLevel } = require("../../config")
 const { Wallet } = require("ethers")
 const { Pharos } = require("../../services/pharos/pharos")
 const { Zenith } = require("../../services/zenith/zenith")
@@ -10,9 +10,16 @@ const { Primus } = require("../../services/primus/primus")
 const { truncateAddress } = require("../../utils/truncateAddress")
 const { delay } = require("../../utils/delay")
 
-const { privateKey, proxy } = workerData
+const { privateKey, proxy, index } = workerData
 const wallet = new Wallet(privateKey, provider)
+
 let token = null
+
+if (!wallet) {
+    yap.error(`index: ${index} has no wallet instance`)
+}
+
+const truncatedAddress = truncateAddress(wallet.address)
 
 const pharos = new Pharos(wallet)
 const zenith = new Zenith(wallet)
@@ -20,7 +27,6 @@ const faroswap = new Faroswap(wallet, proxy)
 const primus = new Primus(wallet)
 const aquaflux = new Aquaflux(wallet, proxy)
 
-const truncatedAddress = truncateAddress(wallet.address)
 
 const getToken = async () => {
     const login = await Pharos.login(privateKey, refferralCode, proxy)
@@ -104,8 +110,6 @@ const taskHandlers = {
                     })
                 }
             }
-
-            return
         },
 
         primus: async () => {
@@ -139,8 +143,6 @@ const taskHandlers = {
                     })
                 }
             }
-
-            return
         }
     },
 
@@ -217,15 +219,21 @@ const taskHandlers = {
             while (transactionCount < transactionLimitConfig) {
                 transactionCount++
                 try {
-                    const randomDex = "zenith"//dex[Math.floor(Math.random() * dex.length)]
+                    const constructedLiqCalldata = await zenith.addLiquidity()
 
-                    if (randomDex === "zenith") {
-                        await Transaction.swapToken(wallet.privateKey)
-                    } else if (randomDex === "faroswap") {
-                        await FaroDex.swapToken(wallet.privateKey, proxy)
+                    if (!constructedLiqCalldata) {
+                        parentPort.postMessage({
+                            type: "failed"
+                        })
                     }
 
-                    skibidi.warn(`${address} SUCCESSFULLY COMPLETED ${currentTask.toUpperCase()} TASK ON ${randomDex}!`)
+                    const executedTransaction = await zenith.executeWithWallet()
+
+                    if (!executedTransaction) {
+                        parentPort.postMessage({
+                            type: "failed"
+                        })
+                    }
 
                     parentPort.postMessage({
                         type: "done"
@@ -339,19 +347,48 @@ const taskHandlers = {
     }
 }
 
+const levelChecker = (point) => {
+    if (point <= 1000) {
+        return level = 1
+    } else if (point >= 1001 && point <= 3500) {
+        return level = 2
+    } else if (point >= 3501 && point <= 6000) {
+        return level = 3
+    } else if (point >= 6001 && point <= 10000) {
+        return level = 4
+    } else if (point >= 10001) {
+        return level = 5
+    }
+}
 
 async function main() {
+    const randomSecond = Math.floor(Math.random() * 120) + 10
+    yap.delay(`[MAIN] ${truncatedAddress} waiting ${randomSecond} second before starting any task`)
+    await delay(randomSecond)
+
+    if (!token) {
+        const tokenStatus = await getToken()
+
+        if (!tokenStatus) {
+            parentPort.postMessage({
+                type: "failed"
+            })
+        }
+    }
+
     const availableTask = []
+    let point = await Pharos.getPoint(wallet.address, token, proxy)
+    const level = levelChecker(Number(point))
 
-    // if (!token) {
-    //     const tokenStatus = await getToken()
+    let isPrioritized
 
-    //     if (!tokenStatus) {
-    //         parentPort.postMessage({
-    //             type: "failed"
-    //         })
-    //     }
-    // }
+    if (level <= maxLevel && level >= minLevel) {
+        yap.warn(`[MAIN] ${truncatedAddress} will be included since it was lower than the prioritized level [${level}]`)
+        isPrioritized = true
+    } else {
+        yap.warn(`[MAIN] ${truncatedAddress} will be excluded since it was higher than the prioritized level [${level}]`)
+        isPrioritized = false
+    }
 
     const filterTask = (task, currentPath = "") => {
         for (const key in task) {
@@ -371,7 +408,8 @@ async function main() {
 
     filterTask(tasks)
 
-    while (availableTask.length > 0) {
+    while (isPrioritized && availableTask.length > 0) {
+
         transactionCount = 0
         try {
             const task = availableTask.shift()

@@ -2,24 +2,29 @@ const { JsonRpcProvider } = require("ethers")
 
 // set the task value to false if you didnt want to include it
 const tasks = {
-    faucet: false,
-    checkin: false,
+    checkin: true,
+    faucet: true,
     send: {
-        pharos: false,
-        primus: false
+        pharos: true,
+        primus: true
     },
     swap: {
-        zenith: false,
-        faroswap: false,
+        zenith: true,
+        faroswap: true,
     },
     liq: {
-        zenith: false,
-        faroswap: false
+        zenith: true,
+        faroswap: true
     },
     rwa: {
         aquaflux: true
-    }
+    },
 }
+
+// set this to either 1, 2, 3 or 4 to prioritize a wallet with a level between minLevel and maxLevel,
+// and skipping a wallet with higher level than the maxLevel
+const minLevel = 1
+const maxLevel = 3
 
 const refferralCode = "PIeu5IbkQuQfH7zd"
 
@@ -30,9 +35,10 @@ const rateLimitConfig = {
     domain: 3
 }
 
-const transactionLimitConfig = 10
+// max for each task was 91
+const transactionLimitConfig = 91
 
-const provider = new JsonRpcProvider("https://testnet.dplabs-internal.com")
+const provider = new JsonRpcProvider("https://api.zan.top/node/v1/pharos/testnet/54b49326c9f44b6e8730dc5dd4348421")
 
 const dexList = {
     contract: {
@@ -79,5 +85,7 @@ module.exports = {
     provider,
     dexList,
     tokenList,
-    maxWorker
+    maxWorker,
+    minLevel,
+    maxLevel
 }
