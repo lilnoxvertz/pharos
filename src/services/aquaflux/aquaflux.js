@@ -230,8 +230,7 @@ class Aquaflux extends Transaction {
                 const data = result.data
                 const signature = data.signature
                 const expiredAt = data.expiresAt
-
-                console.log("signature:", signature)
+                
                 if (!signature) {
                     yap.error(`[AQUAFLUX] ${this.truncatedAddress} No signature found`)
                     return false
