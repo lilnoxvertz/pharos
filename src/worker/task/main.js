@@ -100,7 +100,7 @@ const taskHandlers = {
                     }
 
 
-                    yap.delay(`[PHAROS] ${this.truncatedAddress} Verifying task`)
+                    yap.delay(`[PHAROS] ${truncatedAddress} Verifying task`)
                     const taskId = 103
                     const verify = await Pharos.verifyTask(wallet.address, token, proxy, send.hash, taskId)
 
