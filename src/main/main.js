@@ -1,43 +1,54 @@
-const { skibidi, refferralCode } = require("../config/config")
-const Proxy = require("../utils/proxy.utils")
-const Wallet = require("../utils/wallet.utils")
-const Workers = require("../worker/worker")
+const { Wallet } = require("../utils/wallet");
+const { Proxy } = require("../utils/proxy");
+const { yap } = require("../utils/logger");
+const { maxWorker } = require("../config");
+const { Workers } = require("../worker/worker");
+const { delay } = require("../utils/delay");
+
+let cycle = 0
 
 async function main() {
+    const walletList = Wallet.load()
+    const proxyList = Proxy.load()
+
+    if (walletList.length === 0) {
+        yap.error(`[MAIN] No wallet was found`)
+        process.exit(1)
+    }
+
+    if (proxyList.length === 0) {
+        yap.warn(`[MAIN] No proxy was found.`)
+        maxWorker = 2
+    }
+
+    //await delay(120)
     while (true) {
-        let maxWorker = 10
+        cycle++
         console.clear()
+        yap.warn(`[MAIN] Starting cycle: ${cycle}`)
         try {
-            const wallets = Wallet.load()
-            const proxys = Proxy.load()
+            const task = []
 
-            if (wallets.length === 0) {
-                skibidi.failed("[NO PRIVATE KEYS FOUND]")
-                process.exit(1)
+            for (let i = 0; i < walletList.length; i++) {
+                const privateKey = walletList[i]
+                const proxy = Proxy.get(proxyList, i)
+
+                if (!privateKey) {
+                    yap.error(`[INDEX ${i}] DOESNT HAVE PRIVATE KEY`)
+                    missingPrivateKey.push(i)
+                }
+
+                task.push(() => Workers.main(privateKey, proxy, i))
             }
 
-            if (proxys.length === 0) {
-                maxWorker = 2
-                skibidi.warn("[NO PROXY FOUND. USING CURRENT IP AND LIMITING WORKER]")
-            }
-
-            skibidi.warn(`[CYCLE START] PROCESSING ${wallets.length} WALLETS WITH ${maxWorker} WORKERS`)
-
-            const mainTask = []
-            for (let i = 0; i < wallets.length; i++) {
-                const proxy = Proxy.get(proxys, i)
-                const walletNumber = i + 1
-                mainTask.push(() => Workers.main(wallets[i], proxy, walletNumber))
-            }
-
-            await Workers.startLimitedTask(mainTask, maxWorker)
-            skibidi.success("ALL WALLETS HAVE COMPLETED A FULL CYCLE.")
-            skibidi.processing("RESTARTING THE ENTIRE PROCESS IN 1 HOUR...")
-            await new Promise(resolve => setTimeout(resolve, 120000))
+            await Workers.startLimitedTask(task, maxWorker)
+            yap.delay(`[MAIN] all wallet has completed task. restarting in 60 minute`)
+            const minutes = 60 * 60
+            await delay(minutes)
         } catch (error) {
-            skibidi.failed(error)
-            skibidi.processing("RESTARTING DUE TO ERROR IN 5 MINUTES...")
-            await new Promise(resolve => setTimeout(resolve, 300000))
+            yap.error(`[MAIN] Error when trying to start main task: ${error}`)
+            yap.delay(`[MAIN] Retrying..`)
+            await delay(20)
         }
     }
 }

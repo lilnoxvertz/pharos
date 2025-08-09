@@ -1,6 +1,4 @@
 node_modules
-scrap.address.js
-spread.faucet.js
-test.js
-wallet.txt
 proxy.txt
+wallet.txt
+test.js

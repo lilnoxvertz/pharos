@@ -1,26 +1,25 @@
 const { Worker } = require("worker_threads")
 const path = require("path")
-const { timestamp } = require("../utils/timestamp")
-const chalk = require("chalk")
-const { skibidi } = require("../config/config")
+const { yap } = require("../utils/logger")
 
 class Workers {
-    static async main(privateKey, proxy, walletNumber) {
+    static async main(privateKey, proxy, index) {
         return new Promise((resolve, reject) => {
             const worker = new Worker(path.resolve(__dirname, "./task/main.js"), {
                 workerData: {
                     privateKey: privateKey,
                     proxy: proxy,
-                    walletNumber: walletNumber
+                    index: index
                 }
             })
 
             worker.on("message", (message) => {
-                if (message.type === "done") {
+                if (message.type === "complete") {
+                    yap.success(`[MAIN] ${message.data} Completed all task`)
                     resolve()
                 }
 
-                if (message.type === "success") {
+                if (message.type === "done") {
                     resolve()
                 }
 
@@ -76,7 +75,7 @@ class Workers {
 
     static async mint(privateKey) {
         return new Promise((resolve, reject) => {
-            const worker = new Worker(path.resolve(__dirname, "./task/mint.js"), {
+            const worker = new Worker(path.resolve(__dirname, "./task/nft.js"), {
                 workerData: {
                     privateKey: privateKey
                 }
@@ -87,7 +86,7 @@ class Workers {
                     resolve()
                 }
 
-                if (message.type === "success") {
+                if (message.type === "failed") {
                     resolve()
                 }
 
@@ -100,49 +99,6 @@ class Workers {
             worker.on("exit", (code) => {
                 if (code !== 0) {
                     reject(new Error("WORKER STOPPED"))
-                }
-            })
-        })
-    }
-
-    static async pointsWorker(walletAddress, token, proxy) {
-        return new Promise((resolve, reject) => {
-            const worker = new Worker(path.resolve(__dirname, "./task/point.js"), {
-                workerData: {
-                    walletAddress: walletAddress,
-                    token: token,
-                    proxy: proxy
-                }
-            })
-
-            worker.on("message", (message) => {
-                if (message.type === "done") {
-                    skibidi.warn(`[${message.data.address} DATA]`)
-                    console.log(`[POINTS]`)
-                    console.log(chalk.yellowBright(`🪙 TOTAL POINTS : ${message.data.totalPoints}`))
-                    console.log(chalk.yellowBright(`🪙 TASK POINT   : ${message.data.taskPoints}\n`))
-
-                    console.log(`[TRANSACTION COUNT]`)
-                    console.log(chalk.yellowBright(`➡️ SEND         : ${message.data.sendCount}`))
-                    console.log(chalk.yellowBright(`🔁 SWAP         : ${message.data.swapCount}`))
-                    console.log(chalk.yellowBright(`💦 LIQ          : ${message.data.liqCount}\n`))
-                    resolve()
-                }
-
-                if (message.type === "failed") {
-                    skibidi.failed(message.data)
-                    resolve()
-                }
-
-                if (message.type === "error") {
-                    reject(new Error(message.data))
-                }
-            })
-
-            worker.on("error", reject)
-            worker.on("exit", (code) => {
-                if (code !== 0) {
-                    console.log("WORKER STOPPED")
                 }
             })
         })
@@ -175,4 +131,4 @@ class Workers {
     }
 }
 
-module.exports = Workers
+module.exports = { Workers }

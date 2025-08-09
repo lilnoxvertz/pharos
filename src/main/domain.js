@@ -1,37 +1,40 @@
-const { skibidi } = require("../config/config");
-const Proxy = require("../utils/proxy.utils");
-const Wallet = require("../utils/wallet.utils");
-const Workers = require("../worker/worker");
+const { maxWorker } = require("../config")
+const { yap } = require("../utils/logger")
+const { Proxy } = require("../utils/proxy")
+const { Wallet } = require("../utils/wallet")
+const { Workers } = require("../worker/worker")
 
-async function mintDomain() {
-    let maxWorker = 10
-
+async function domain() {
     try {
-        const wallets = Wallet.load()
-        const proxys = Proxy.load()
+        console.clear()
+        const walletList = Wallet.load()
+        const proxyList = Proxy.load()
 
-        if (wallets.length === 0) {
-            skibidi.failed("[NO PRIVATE KEYS FOUND]")
+        if (walletList.length === 0) {
+            yap.error(`[MAIN] No wallet was found`)
             process.exit(1)
         }
 
-        if (proxys.length === 0) {
+        if (proxyList.length === 0) {
+            yap.warn(`[MAIN] No proxy was found.`)
             maxWorker = 2
-            skibidi.warn("[NO PROXY FOUND. USING CURRENT IP AND LIMITING WORKER]")
         }
 
         const task = []
-        for (let i = 0; i < wallets.length; i++) {
-            const proxy = Proxy.get(proxys, i)
-            task.push(() => Workers.domain(wallets[i], proxy))
+        for (let i = 0; i < walletList.length; i++) {
+            const privateKey = walletList[i]
+            const proxy = Proxy.get(proxyList, i)
+            task.push(() => Workers.domain(privateKey, proxy))
         }
 
         await Workers.startLimitedTask(task, maxWorker)
-
-        skibidi.success(`Minting domain process done!`)
+        yap.success(`[MAIN] all wallet has completed domain task.`)
+        return
     } catch (error) {
-        skibidi.failed(`Failed initializing worker: ${error}`)
+        yap.error(`[MAIN] Error when trying to start domain task: ${error}`)
+        yap.delay(`[MAIN] Retrying..`)
+        await delay(20)
     }
 }
 
-mintDomain()
+domain()

@@ -1,26 +1,23 @@
 {
-  "name": "pharos",
+  "name": "ijwijad",
   "version": "1.0.0",
   "description": "",
-  "license": "ISC",
-  "author": "x",
-  "type": "commonjs",
-  "main": "main.js",
+  "main": "index.js",
   "scripts": {
     "start": "node ./src/main/main.js",
+    "nft": "node ./src/main/nft.js",
     "domain": "node ./src/main/domain.js",
-    "generate": "node ./src/main/generate.wallet.js",
-    "nft": "node ./src/main/mint.js",
-    "data": "node ./src/main/get.data.js",
-    "test": "node test.js"
+    "generate": "node ./src/main/generateWallet.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
     "chalk": "^4.1.2",
-    "dotenv": "^16.5.0",
-    "ethers": "^6.14.3",
-    "https-proxy-agent": "7.0.6",
-    "moment-timezone": "^0.5.48",
-    "node-fetch": "3.3.2",
-    "punycode": "2.3.1"
+    "ethers": "^6.15.0",
+    "https-proxy-agent": "^7.0.6",
+    "moment-timezone": "^0.6.0"
   }
 }
