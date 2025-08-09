@@ -2,29 +2,29 @@ const { JsonRpcProvider } = require("ethers")
 
 // set the task value to false if you didnt want to include it
 const tasks = {
-    checkin: false,
-    faucet: false,
+    checkin: true,
+    faucet: true,
     send: {
         pharos: true,
-        primus: false
+        primus: true
     },
     swap: {
-        zenith: false,
-        faroswap: false,
+        zenith: true,
+        faroswap: true,
     },
     liq: {
-        zenith: false,
-        faroswap: false
+        zenith: true,
+        faroswap: true
     },
     rwa: {
-        aquaflux: false
+        aquaflux: true
     },
 }
 
 // set this to either 1, 2, 3 or 4 to prioritize a wallet with a level between minLevel and maxLevel,
 // and skipping a wallet with higher level than the maxLevel
 const minLevel = 1
-const maxLevel = 3
+const maxLevel = 5
 
 const refferralCode = "PIeu5IbkQuQfH7zd"
 
