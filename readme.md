@@ -2,7 +2,7 @@
 
 # clone the repo
   `
- gitclone https://github.com/lilnoxvertz/pharos.git
+ git clone https://github.com/lilnoxvertz/pharos.git
 `
 
 # install the package
