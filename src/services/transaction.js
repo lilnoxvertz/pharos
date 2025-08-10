@@ -81,14 +81,12 @@ class Transaction {
 
             if (overrides) {
                 tx = await this.contract[functionName](...args, overrides)
-                await tx.wait()
             } else {
                 tx = await this.contract[functionName](...args)
-                await tx.wait()
             }
 
             yap.delay(`[${this.webName}] ${this.truncatedAddress} is confirming transaction`)
-
+            await tx.wait()
             const receipt = await this.check(tx.hash)
             if (!receipt.status) {
                 yap.error(`[${this.webName}] ${this.truncatedAddress} Failed ${method}`)
